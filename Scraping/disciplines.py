@@ -19,10 +19,12 @@ def is_discipline_code(code: str) -> bool:
 
 
 def get_disciplines_url(initials: str) -> str:
+    """Return the url for the desired initials."""
     return DISCIPLINES_URL + initials.lower() + '.html'
 
 
 def get_all_disciplines_initials() -> list[str]:
+    """Return a list of initials from the catalog."""
     soup = load_soup(DISCIPLINES_URL + 'index.html')
     disciplines_div_class = 'disc' # Part of the div class.
     initials_div = soup.find(class_=re.compile(disciplines_div_class))
@@ -30,10 +32,12 @@ def get_all_disciplines_initials() -> list[str]:
 
 
 def load_soup(url: str) -> bs4.BeautifulSoup:
+    """Load BeautifulSoup data from desired url."""
     return bs4.BeautifulSoup(requests.get(url).content, 'html.parser')
 
 
 def get_disciplines(initials: str) -> bs4.element.ResultSet:
+    """Get disciplines with desired initials."""
     url = get_disciplines_url(initials)
     soup = load_soup(url)
     disciplines_div_class = 'row' # Div class that identify a discipline at the page html.
@@ -41,6 +45,7 @@ def get_disciplines(initials: str) -> bs4.element.ResultSet:
 
 
 def parse_requirements(raw: str) -> list[list[str]]:
+    """Parse requirements for a discipline."""
     or_string = ' ou '
     and_string = '+'
     requirements = [group.split(and_string) for group in raw.split(or_string)]
@@ -50,6 +55,7 @@ def parse_requirements(raw: str) -> list[list[str]]:
         return requirements
     else:
         return None
+
 
 def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Any]:
     """Parse a div with correct class from disciplines source."""
@@ -82,6 +88,7 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Any]:
 
 
 def get_and_save_disciplines_data(initials: str, directory: str):
+    """Save discipline data for desired initials as a json file."""
     disciplines = get_disciplines(initials)
     disciplines_dict = parse_disciplines(disciplines)
     with open(f'{directory}/{initials.upper()}.json', 'w') as file:
