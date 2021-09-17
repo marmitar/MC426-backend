@@ -1,8 +1,14 @@
+"""
+Get information for Unicamp disciplines from the 2021 catalog.
+"""
+
 import re
+from typing import Any
 import requests
 import json
 import argparse
 import bs4
+
 
 DISCIPLINES_URL = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/disciplinas/'
 
@@ -38,37 +44,41 @@ def parse_requirements(raw: str) -> list[list[str]]:
     or_string = ' ou '
     and_string = '+'
     requirements = [group.split(and_string) for group in raw.split(or_string)]
-    return requirements if is_discipline_code(requirements[0][0]) else None
 
+    # Return requirements only if text is a valid code.
+    if is_discipline_code(requirements[0][0]):
+        return requirements
+    else:
+        return None
 
-def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict:
+def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Any]:
     """Parse a div with correct class from disciplines source."""
-    disciplines_dict = list()
     disciplines_id = 'disc' # Part of the id from the tag with code and name.
     code_name_sep = ' - ' # Discipline code and name separator.
     requirements_text = 'requisitos' # Part of the text in the requirements tag.
 
+    disciplines_list = list()
     for discipline in disciplines:
         try:
+            discipline_dict = dict()
+
             # Discipline code and name:
             code_name_tag = discipline.find(id=re.compile(disciplines_id))
             code, name = code_name_tag.text.split(code_name_sep, 1)
+            discipline_dict['code'] = code
 
             # Discipine requirements:
             requirements_tag = discipline.find(re.compile('.*'), string=re.compile(requirements_text))
-            requirements = requirements_tag.next_sibling.next_sibling.text # First sibling is just a line break.
+            requirements_string = requirements_tag.next_sibling.next_sibling.text # First sibling is just a line break.
+            discipline_dict['req'] = parse_requirements(requirements_string)
 
             # Save info:
-            disciplines_dict.append({
-                'code': code,
-                'name': name,
-                'req': parse_requirements(requirements)
-            })
+            disciplines_list.append(discipline_dict)
 
         except AttributeError:
             continue
 
-    return disciplines_dict
+    return disciplines_list
 
 
 def get_and_save_disciplines_data(initials: str, directory: str):
