@@ -2,20 +2,32 @@
 Get information for Unicamp disciplines from the 2021 catalog.
 """
 
+from __future__ import annotations
 import re
-from typing import Any
-import requests
-import json
+from typing import Any, TypedDict, Optional
 import argparse
 import bs4
+from util import *
 
 
 DISCIPLINES_URL = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/disciplinas/'
 
 
+class Discipline(TypedDict):
+    code: str
+    name: str
+    reqs: Optional[list[list[Requirement]]]
+
+
+class Requirement(TypedDict):
+    code: str
+    partial: Optional[bool]
+    special: Optional[bool]
+
+
 def is_discipline_code(code: str) -> bool:
     """Checks if code has format of discipline code."""
-    return len(code) < 8
+    return len(code) == 5
 
 
 def get_disciplines_url(initials: str) -> str:
@@ -31,11 +43,6 @@ def get_all_disciplines_initials() -> list[str]:
     return [initials.text.replace(' ', '_') for initials in initials_div.find_all('div')]
 
 
-def load_soup(url: str) -> bs4.BeautifulSoup:
-    """Load BeautifulSoup data from desired url."""
-    return bs4.BeautifulSoup(requests.get(url).content, 'html.parser')
-
-
 def get_disciplines(initials: str) -> bs4.element.ResultSet:
     """Get disciplines with desired initials."""
     url = get_disciplines_url(initials)
@@ -44,20 +51,48 @@ def get_disciplines(initials: str) -> bs4.element.ResultSet:
     return soup.find_all(class_=disciplines_div_class)
 
 
-def parse_requirements(raw: str) -> list[list[str]]:
-    """Parse requirements for a discipline."""
-    or_string = ' ou '
-    and_string = '+'
-    requirements = [group.split(and_string) for group in raw.split(or_string)]
+def create_requirement(raw: str) -> Requirement:
+    """Create a requirement for the first time, with its code and 'partial' flag."""
+    code: str
+    partial: bool
 
-    # Return requirements only if text is a valid code.
-    if is_discipline_code(requirements[0][0]):
-        return requirements
+    # Checks for common discipline code:
+    if is_discipline_code(raw):
+        code = raw
+        partial = False
+
+    # Checks for string of type '*AA000':
+    elif is_discipline_code(raw[1:]) and raw[0] == '*':
+        code = raw[1:]
+        partial = True
+
     else:
         return None
 
+    return Requirement(code=code, partial=partial)
 
-def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Any]:
+
+def parse_requirements(raw: str) -> list[list[Requirement]]:
+    """Parse requirements for a discipline."""
+    or_string = ' ou '
+    and_string = '+'
+    groups = raw.split(or_string)
+
+    requirements = list()
+
+    for group in groups:
+        group_reqs = [create_requirement(raw) for raw in group.split(and_string)]
+
+        # Checks for non-valid requirements:
+        if None in group_reqs:
+            return None
+
+        requirements.append(group_reqs)
+
+    return requirements
+
+
+def parse_disciplines(disciplines: bs4.element.ResultSet) -> list[Discipline]:
     """Parse a div with correct class from disciplines source."""
     disciplines_id = 'disc' # Part of the id from the tag with code and name.
     code_name_sep = ' - ' # Discipline code and name separator.
@@ -66,7 +101,7 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Any]:
     disciplines_list = list()
     for discipline in disciplines:
         try:
-            discipline_dict = dict()
+            discipline_dict = Discipline()
 
             # Discipline code and name:
             code_name_tag = discipline.find(id=re.compile(disciplines_id))
@@ -91,8 +126,7 @@ def get_and_save_disciplines_data(initials: str, directory: str):
     """Save discipline data for desired initials as a json file."""
     disciplines = get_disciplines(initials)
     disciplines_dict = parse_disciplines(disciplines)
-    with open(f'{directory}/{initials.upper()}.json', 'w') as file:
-        json.dump(disciplines_dict, file, indent=4, ensure_ascii=False)
+    dump_content_as_json(disciplines_dict, f'{directory}/{initials.upper()}.json')
 
 
 def get_and_save_all_disciplines_data(directory: str):
