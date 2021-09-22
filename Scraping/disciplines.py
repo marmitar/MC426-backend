@@ -19,6 +19,7 @@ class Discipline(TypedDict):
     code: str
     name: str
     reqs: Optional[list[list[Requirement]]]
+    reqBy: Optional[list[str]]
 
 
 class Requirement(TypedDict):
@@ -65,23 +66,18 @@ def create_requirement(raw: str) -> Requirement:
     """
     Create a requirement for the first time, with its code and 'partial' flag.
     """
-    code: str
-    partial: bool
-
     # Checks for common discipline code:
     if is_discipline_code(raw):
         code = raw
-        partial = False
+        return Requirement(code=code)
 
     # Checks for string of type '*AA000':
     elif is_discipline_code(raw[1:]) and raw[0] == '*':
         code = raw[1:]
-        partial = True
+        return Requirement(code=code, partial=True)
 
     else:
         return None
-
-    return Requirement(code=code, partial=partial)
 
 
 def parse_requirements(raw: str) -> list[list[Requirement]]:
@@ -128,6 +124,8 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Disciplin
             reqs = parse_requirements(requirements_string)
 
             # Save info:
+            # TODO:
+            # check if reqs is None to omit it
             disciplines_map[code] = Discipline(code=code, name=name, reqs=reqs)
 
         except AttributeError:
@@ -136,30 +134,43 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Disciplin
     return disciplines_map
 
 
-def code_exists(code: str, data: dict[str, dict[str, Discipline]]):
+def get_discipline(code: str, data: dict[str, dict[str, Discipline]]) -> Discipline:
     """
-    Checks if code is in data.
+    Get discipline from all data.
+    If there is no such code, None is returned.
     """
     initials_data = data.get(code[0:2])
 
     if initials_data is None:
-        return False
-    elif code in initials_data.keys():
-        return True
+        return None
     else:
-        return False
+        return initials_data.get(code)
+
+
+def add_required_by(requirement: Discipline, discipline_code: str):
+    """
+    Add the discipline to the 'reqBy' field of requirement.
+    """
+    if requirement.get('reqBy'):
+        requirement['reqBy'].append(discipline_code)
+    else:
+        requirement['reqBy'] = [discipline_code]
 
 
 def update_initials_requirements(data: dict[str, Discipline], all_data: dict[str, dict[str, Discipline]]):
     """
-    Usen all data to update requirements for given initials.
+    Use all data to update requirements for given initials.
     """
     for code in data:
-        requirement_blocks = data[code].get('reqs')
+        discipline = data[code]
+        requirement_blocks = discipline.get('reqs')
         if requirement_blocks is not None:
             for block in requirement_blocks:
                 for requirement in block:
-                    if not code_exists(requirement['code'], all_data):
+                    requirement_discipline = get_discipline(requirement['code'], all_data)
+                    if requirement_discipline:
+                        add_required_by(requirement_discipline, code)
+                    else:
                         requirement['special'] = True
 
 
