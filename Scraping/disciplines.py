@@ -118,7 +118,7 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Disciplin
             code, name = code_name_tag.text.split(code_name_sep, 1)
 
             # Discipine requirements:
-            requirements_tag = discipline.find(compile_regex('.*'), string=compile_regex(requirements_text))
+            requirements_tag = discipline.find(True, string=compile_regex(requirements_text))
             requirements_string = requirements_tag.next_sibling.next_sibling.text # First sibling is just a line break.
             reqs = parse_requirements(requirements_string)
 
