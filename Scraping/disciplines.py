@@ -39,7 +39,7 @@ def get_disciplines_url(initials: str) -> str:
     """
     Return the url for the desired initials.
     """
-    return DISCIPLINES_URL + initials.lower() + '.html'
+    return DISCIPLINES_URL + initials.lower().replace(' ', '_') + '.html'
 
 
 def get_all_initials() -> list[str]:
@@ -49,7 +49,7 @@ def get_all_initials() -> list[str]:
     soup = load_soup(DISCIPLINES_URL + 'index.html')
     disciplines_div_class = 'disc' # Part of the div class.
     initials_div = soup.find(class_=re.compile(disciplines_div_class))
-    return [initials.text.upper().replace(' ', '_') for initials in initials_div.find_all('div')]
+    return [initials.text.upper() for initials in initials_div.find_all('div')]
 
 
 def get_disciplines(initials: str) -> bs4.element.ResultSet:
@@ -124,9 +124,10 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Disciplin
             reqs = parse_requirements(requirements_string)
 
             # Save info:
-            # TODO:
-            # check if reqs is None to omit it
-            disciplines_map[code] = Discipline(code=code, name=name, reqs=reqs)
+            if reqs:
+                disciplines_map[code] = Discipline(code=code, name=name, reqs=reqs)
+            else:
+                disciplines_map[code] = Discipline(code=code, name=name)
 
         except AttributeError:
             continue
@@ -210,7 +211,7 @@ def main():
 
     data = get_all_disciplines_data()
     for initials in data:
-        dump_content_as_json(data[initials], f'{args.DIRECTORY[0]}/{initials}.json')
+        dump_content_as_json(data[initials], f"{args.DIRECTORY[0]}/{initials.replace(' ', '_')}.json")
 
 
 if __name__ == '__main__':
