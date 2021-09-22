@@ -3,7 +3,6 @@ Get information for Unicamp disciplines from the 2021 catalog.
 """
 
 from __future__ import annotations
-import re
 from typing import Any, TypedDict, Optional
 import argparse
 import bs4
@@ -47,9 +46,9 @@ def get_all_initials() -> list[str]:
     Return a list of initials from the catalog.
     """
     soup = load_soup(DISCIPLINES_URL + 'index.html')
-    disciplines_div_class = 'disc' # Part of the div class.
-    initials_div = soup.find(class_=re.compile(disciplines_div_class))
-    return [initials.text.upper() for initials in initials_div.find_all('div')]
+    disciplines_class = 'disc' # Part of the html component class.
+    initials_components = soup.find(class_=compile_regex(disciplines_class))
+    return [initials.text.upper() for initials in initials_components.find_all('div')]
 
 
 def get_disciplines(initials: str) -> bs4.element.ResultSet:
@@ -58,8 +57,8 @@ def get_disciplines(initials: str) -> bs4.element.ResultSet:
     """
     url = get_disciplines_url(initials)
     soup = load_soup(url)
-    disciplines_div_class = 'row' # Div class that identify a discipline at the page html.
-    return soup.find_all(class_=disciplines_div_class)
+    disciplines_class = 'row' # Html component class that identify a discipline at the page html.
+    return soup.find_all(class_=disciplines_class)
 
 
 def create_requirement(raw: str) -> Requirement:
@@ -104,7 +103,7 @@ def parse_requirements(raw: str) -> list[list[Requirement]]:
 
 def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Discipline]:
     """
-    Parse a div with correct class from disciplines source.
+    Parse a html component with correct class from disciplines source.
     Builds a map from discipline code to Discipline.
     """
     disciplines_id = 'disc' # Part of the id from the tag with code and name.
@@ -115,11 +114,11 @@ def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Disciplin
     for discipline in disciplines:
         try:
             # Discipline code and name:
-            code_name_tag = discipline.find(id=re.compile(disciplines_id))
+            code_name_tag = discipline.find(id=compile_regex(disciplines_id))
             code, name = code_name_tag.text.split(code_name_sep, 1)
 
             # Discipine requirements:
-            requirements_tag = discipline.find(re.compile('.*'), string=re.compile(requirements_text))
+            requirements_tag = discipline.find(compile_regex('.*'), string=compile_regex(requirements_text))
             requirements_string = requirements_tag.next_sibling.next_sibling.text # First sibling is just a line break.
             reqs = parse_requirements(requirements_string)
 
