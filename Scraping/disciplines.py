@@ -46,9 +46,9 @@ def get_all_initials() -> list[str]:
     Return a list of initials from the catalog.
     """
     soup = load_soup(DISCIPLINES_URL + 'index.html')
-    disciplines_class = 'disc' # Part of the html component class.
-    initials_components = soup.find(class_=compile_regex(disciplines_class))
-    return [initials.text.upper() for initials in initials_components.find_all('div')]
+    disciplines_class = 'disc' # Part of the tag class.
+    initials_tags = soup.find(class_=compile_regex(disciplines_class))
+    return [initials.text.upper() for initials in initials_tags.find_all('div')]
 
 
 def get_disciplines(initials: str) -> bs4.element.ResultSet:
@@ -57,7 +57,7 @@ def get_disciplines(initials: str) -> bs4.element.ResultSet:
     """
     url = get_disciplines_url(initials)
     soup = load_soup(url)
-    disciplines_class = 'row' # Html component class that identify a discipline at the page html.
+    disciplines_class = 'row' # Tag class that identify a discipline at the page.
     return soup.find_all(class_=disciplines_class)
 
 
@@ -103,7 +103,7 @@ def parse_requirements(raw: str) -> list[list[Requirement]]:
 
 def parse_disciplines(disciplines: bs4.element.ResultSet) -> dict[str, Discipline]:
     """
-    Parse a html component with correct class from disciplines source.
+    Parse a tag with correct class from disciplines source.
     Builds a map from discipline code to Discipline.
     """
     disciplines_id = 'disc' # Part of the id from the tag with code and name.

@@ -38,9 +38,26 @@ def get_all_courses() -> list[Course]:
     """
     index_url = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/index.html'
     soup = load_soup(index_url)
-    course_class = 'curso' # Part of the html component class.
-    courses_components = soup.find_all('a', class_=compile_regex(course_class))
-    return [parse_course_text(component.text) for component in courses_components]
+    course_class = 'rotulo-curso' # Part of the tag class.
+    courses_tags = soup.find_all(True, class_=compile_regex(course_class))
+    return [parse_course_text(tag.text) for tag in courses_tags]
+
+
+def get_discipline_code(discipline_tag: bs4.element.Tag) -> str:
+    """
+    For a given discipine tag, split text between code and credits and return code.
+    """
+    code, _ = discipline_tag.text.split()
+    return code
+
+
+def build_period_disciplines(period_content_tag: bs4.element.Tag) -> list[str]:
+    """
+    Parse a period tag and create a list of disciplines codes.
+    """
+    disciplines_href = 'disc' # Part of the href value for discipline tags.
+    disciplines_tags = period_content_tag.find_all(True, href=compile_regex(disciplines_href))
+    return [get_discipline_code(tag) for tag in disciplines_tags]
 
 
 def add_course_tree(course: Course):
@@ -50,13 +67,18 @@ def add_course_tree(course: Course):
     url = get_course_url(course)
     soup = load_soup(url)
     period_text = 'semestre'
-    periods_components = soup.find_all('h3', string=compile_regex(period_text))
-    for period_component in periods_components:
-        print(period_component)
+    periods_title_tags = soup.find_all('h3', string=compile_regex(period_text))
+    periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
+    tree = [build_period_disciplines(tag) for tag in periods_content_tags]
+
+    for semester in tree:
+        print(semester)
+
 
 
 def main():
     courses = get_all_courses()
+
     course = courses[0]
     add_course_tree(course)
 
