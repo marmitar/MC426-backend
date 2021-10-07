@@ -7,7 +7,7 @@ from typing import TypedDict, Optional
 from util import *
 
 
-COURSES_URL = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/cursos/'
+COURSES_URL = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/'
 
 
 class Course(TypedDict):
@@ -20,7 +20,7 @@ def get_course_url(course: Course) -> str:
     """
     Return the url for the desired course.
     """
-    return COURSES_URL + str(course.get('code')) + 'g/sugestao.html'
+    return COURSES_URL + 'cursos/' + str(course.get('code')) + 'g/sugestao.html'
 
 
 def parse_course_text(text: str) -> Course:
@@ -36,7 +36,7 @@ def get_all_courses() -> list[Course]:
     """
     Build all courses instances from the index page.
     """
-    index_url = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/index.html'
+    index_url = COURSES_URL + 'index.html'
     soup = load_soup(index_url)
     course_class = 'rotulo-curso' # Part of the tag class.
     courses_tags = soup.find_all(True, class_=compile_regex(course_class))
@@ -70,10 +70,6 @@ def add_course_tree(course: Course):
     periods_title_tags = soup.find_all('h3', string=compile_regex(period_text))
     periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
     tree = [build_period_disciplines(tag) for tag in periods_content_tags]
-
-    for semester in tree:
-        print(semester)
-
 
 
 def main():
