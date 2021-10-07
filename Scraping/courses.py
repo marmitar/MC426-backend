@@ -2,8 +2,9 @@
 Get information from Unicamp courses from the 2021 catalog.
 """
 
-from json import load
 from typing import TypedDict, Optional
+import argparse
+import bs4
 from util import *
 
 
@@ -81,9 +82,7 @@ def add_course_tree_or_variant(course: Course):
     periods_title_tags = soup.find_all('h3', string=compile_regex(period_text))
     periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
     tree = [build_period_disciplines(tag) for tag in periods_content_tags]
-
-    # print(tree)
-    # course['tree'] = tree
+    course['tree'] = tree
 
 
 def get_all_courses() -> list[Course]:
@@ -99,7 +98,15 @@ def get_all_courses() -> list[Course]:
 
 
 def main():
-    courses = get_all_courses()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('DIRECTORY', action='store', nargs=1, type=str,
+        help='directory to save output'
+    )
+
+    args = parser.parse_args()
+
+    for course in get_all_courses():
+        dump_content_as_json(course, f"{args.DIRECTORY[0]}/{course['code']}.json")
 
 
 if __name__ == '__main__':
