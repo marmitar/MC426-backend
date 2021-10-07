@@ -1,3 +1,4 @@
+from typing import Pattern
 import bs4
 import requests
 import json
@@ -16,7 +17,7 @@ def dump_content_as_json(content: dict, filename: str):
     with open(filename, 'w') as file:
         json.dump(content, file, indent=4, ensure_ascii=False)
 
-def compile_regex(string: str):
+def compile_regex(string: str) -> Pattern[str]:
     """
     Compile text as regex and return
     """
