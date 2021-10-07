@@ -2,6 +2,7 @@
 Get information from Unicamp courses from the 2021 catalog.
 """
 
+from __future__ import annotations
 from typing import TypedDict, Optional
 import argparse
 import bs4
@@ -72,6 +73,40 @@ def build_period_disciplines(period_content_tag: bs4.element.Tag) -> list[str]:
     return [get_discipline_code(tag) for tag in disciplines_tags]
 
 
+def build_tree(soup: bs4.element.Tag | bs4.BeautifulSoup) -> list[list[str]]:
+    """
+    Receive a Tag that refers to a tree and build it.
+    """
+    period_text = 'semestre'
+    periods_title_tags = soup.find_all('h3', string=compile_regex(period_text))
+    periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
+    return [build_period_disciplines(tag) for tag in periods_content_tags]
+
+
+def add_course_tree(course: Course, soup: bs4.BeautifulSoup):
+    """
+    Receives a course with no variants and add its tree.
+    """
+    course['tree'] = build_tree(soup)
+
+
+def add_course_variants(course: Course, soup: bs4.BeautifulSoup):
+    """
+    Receives a course with variants and add trees to it.
+    """
+    header_to_ignore = 'observação'
+    possible_variant_headers = soup.find_all('h2')
+    variants = list()
+
+    for tag in possible_variant_headers:
+        if tag.text.lower() not in header_to_ignore:
+            name = tag.text
+            tree = build_tree(tag.parent)
+            variants.append(Variant(name=name, tree=tree))
+
+    course['variant'] = variants
+
+
 def has_variants(course: Course, soup: bs4.BeautifulSoup) -> bool:
     """
     Return whether a course has variants or not.
@@ -80,25 +115,6 @@ def has_variants(course: Course, soup: bs4.BeautifulSoup) -> bool:
     non_variant_name = 'codigo' # String present in a non-variant course name attribute on 'a' tag.
     search_result = soup.find_all('a', attrs={"name": compile_regex(non_variant_name)})
     return not bool(search_result)
-
-
-def add_course_tree(course: Course, soup: bs4.BeautifulSoup):
-    """
-    Receives a course with no variants and add its tree.
-    """
-    period_text = 'semestre'
-    periods_title_tags = soup.find_all('h3', string=compile_regex(period_text))
-    periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
-    tree = [build_period_disciplines(tag) for tag in periods_content_tags]
-    course['tree'] = tree
-
-
-def add_course_variants(course: Course, soup: bs4.BeautifulSoup):
-    """
-    Receives a course with variants and add trees to it.
-    """
-    # TODO
-    pass
 
 
 def get_all_courses() -> list[Course]:
