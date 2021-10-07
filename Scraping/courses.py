@@ -10,11 +10,15 @@ from util import *
 COURSES_URL = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/'
 
 
+class Variant(TypedDict):
+    name: str
+    tree: list[list[str]]
+
 class Course(TypedDict):
     code: str
     name: str
+    variant: list[Variant]
     tree: Optional[list[list[str]]]
-
 
 
 def get_course_url(course: Course) -> str:
@@ -33,9 +37,9 @@ def parse_course_text(text: str) -> Course:
     return Course(code=code, name=name)
 
 
-def get_all_courses() -> list[Course]:
+def build_all_courses() -> list[Course]:
     """
-    Build all courses instances from the index page.
+    Build all courses instances from the index page without tree or variants.
     """
     index_url = COURSES_URL + 'index.html'
     soup = load_soup(index_url)
@@ -48,7 +52,13 @@ def get_discipline_code(discipline_tag: bs4.element.Tag) -> str:
     """
     For a given discipine tag, split text between code and credits and return code.
     """
-    code, _ = discipline_tag.text.split()
+    clean_content = discipline_tag.text.split() # Remove whitespaces, tabs and similar.
+    code = clean_content[0]
+
+    # Check case where code has a whitespace (F 000).
+    if len(code) == 1:
+        code += ' ' + clean_content[1]
+
     return code
 
 
@@ -61,9 +71,9 @@ def build_period_disciplines(period_content_tag: bs4.element.Tag) -> list[str]:
     return [get_discipline_code(tag) for tag in disciplines_tags]
 
 
-def add_course_tree(course: Course):
+def add_course_tree_or_variant(course: Course):
     """
-    For a given course, add the tree field using its html page.
+    For a given course, add the tree or variant field using its html page.
     """
     url = get_course_url(course)
     soup = load_soup(url)
@@ -72,12 +82,24 @@ def add_course_tree(course: Course):
     periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
     tree = [build_period_disciplines(tag) for tag in periods_content_tags]
 
+    # print(tree)
+    # course['tree'] = tree
+
+
+def get_all_courses() -> list[Course]:
+    """
+    Build all courses and add tree or variants.
+    """
+    courses = build_all_courses()
+
+    for course in courses:
+        add_course_tree_or_variant(course)
+
+    return courses
+
 
 def main():
     courses = get_all_courses()
-
-    course = courses[0]
-    add_course_tree(course)
 
 
 if __name__ == '__main__':
