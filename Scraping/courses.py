@@ -72,17 +72,33 @@ def build_period_disciplines(period_content_tag: bs4.element.Tag) -> list[str]:
     return [get_discipline_code(tag) for tag in disciplines_tags]
 
 
-def add_course_tree_or_variant(course: Course):
+def has_variants(course: Course, soup: bs4.BeautifulSoup) -> bool:
     """
-    For a given course, add the tree or variant field using its html page.
+    Return whether a course has variants or not.
+    Courses with no variants have and 'a' tag with name=${esp.codigo} in page source.
     """
-    url = get_course_url(course)
-    soup = load_soup(url)
+    non_variant_name = 'codigo' # String present in a non-variant course name attribute on 'a' tag.
+    search_result = soup.find_all('a', attrs={"name": compile_regex(non_variant_name)})
+    return not bool(search_result)
+
+
+def add_course_tree(course: Course, soup: bs4.BeautifulSoup):
+    """
+    Receives a course with no variants and add its tree.
+    """
     period_text = 'semestre'
     periods_title_tags = soup.find_all('h3', string=compile_regex(period_text))
     periods_content_tags = [tag.next_sibling.next_sibling for tag in periods_title_tags] # First sibling is just a line break.
     tree = [build_period_disciplines(tag) for tag in periods_content_tags]
     course['tree'] = tree
+
+
+def add_course_variants(course: Course, soup: bs4.BeautifulSoup):
+    """
+    Receives a course with variants and add trees to it.
+    """
+    # TODO
+    pass
 
 
 def get_all_courses() -> list[Course]:
@@ -92,7 +108,12 @@ def get_all_courses() -> list[Course]:
     courses = build_all_courses()
 
     for course in courses:
-        add_course_tree_or_variant(course)
+        url = get_course_url(course)
+        soup = load_soup(url)
+        if has_variants(course, soup):
+            add_course_variants(course, soup)
+        else:
+            add_course_tree(course, soup)
 
     return courses
 
