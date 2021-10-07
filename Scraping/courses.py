@@ -11,9 +11,10 @@ COURSES_URL = 'https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/'
 
 
 class Course(TypedDict):
-    code: int
+    code: str
     name: str
     tree: Optional[list[list[str]]]
+
 
 
 def get_course_url(course: Course) -> str:
@@ -29,7 +30,7 @@ def parse_course_text(text: str) -> Course:
     """
     code_name_sep = ' - '
     code, name = text.split(code_name_sep, 1)
-    return Course(code=int(code), name=name)
+    return Course(code=code, name=name)
 
 
 def get_all_courses() -> list[Course]:
