@@ -182,7 +182,7 @@ def get_disciplines_data(initials: str) -> dict[str, Discipline]:
     return parse_disciplines(disciplines_result_set)
 
 
-def get_all_disciplines_data() -> dict[str, dict[str, Discipline]]:
+def get_all_disciplines_data() -> dict[str, list[Discipline]]:
     """
     Return all discipline data.
     Builds a map from initials to disciplines.
@@ -197,7 +197,7 @@ def get_all_disciplines_data() -> dict[str, dict[str, Discipline]]:
     for initials in data:
         update_initials_requirements(data[initials], data)
 
-    return data
+    return {initial: list(content.values()) for initial, content in data.items()}
 
 
 def main():
