@@ -47,15 +47,6 @@ public extension WebScrapable {
 
         return parsed
     }
-
-    /// Executa o script de Scraping e parseia todos os resultados.
-    ///
-    /// Usa um logger para avisar o estado da execução.
-    ///
-    /// - Returns: Os resultados de todos os arquivos parseados.
-    static func scrapeJoined(logger: Logger? = nil) throws -> [Self] {
-        try self.scrape(logger: logger).flatMap { _, value in value }
-    }
 }
 
 

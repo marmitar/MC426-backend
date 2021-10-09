@@ -138,7 +138,7 @@ public extension RandomAccessCollection where SubSequence == ArraySlice<Element>
     }
 }
 
-extension MutableCollection where Self: RandomAccessCollection {
+public extension MutableCollection where Self: RandomAccessCollection {
     /// Ordena a coleção usando uma chave de comparação.
     ///
     /// - Complexity: O(*n* log *n*)
@@ -147,7 +147,7 @@ extension MutableCollection where Self: RandomAccessCollection {
     }
 }
 
-extension RandomAccessCollection where Index: BinaryInteger {
+public extension RandomAccessCollection where Index: BinaryInteger {
     /// Busca binária em um vetor ordenado.
     ///
     /// - Parameter searchKey: Chave a ser buscada.

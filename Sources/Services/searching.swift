@@ -26,7 +26,7 @@ public protocol SearchableProperty: CaseIterable, Equatable {
 /// Conjunto imutável de um mesmo tipo de dados procuráveis.
 public class Database<Entry: Searchable> {
     /// Campos procuráveis do dado.
-    typealias Field = Entry.Properties
+    public typealias Field = Entry.Properties
     /// Campo de ordenação.
     static var sortedOn: Field? { Entry.sortOn }
 
@@ -34,7 +34,7 @@ public class Database<Entry: Searchable> {
     private let entries: [Entry]
 
     /// Prepara os dados para busca.
-    init(entries data: [Entry]) {
+    public init(entries data: [Entry]) {
         var entries = data
         if let field = Entry.sortOn {
             entries.sort(on: field.getter)
@@ -47,7 +47,7 @@ public class Database<Entry: Searchable> {
     ///
     /// - Returns: Primeiro elemento no conjunto de dados
     ///   que retorna `true` para o predicado.
-    func find(where predicate: (Entry) throws -> Bool) rethrows -> Entry? {
+    public func find(where predicate: (Entry) throws -> Bool) rethrows -> Entry? {
         try entries.first(where: predicate)
     }
 
@@ -58,7 +58,7 @@ public class Database<Entry: Searchable> {
     ///
     /// Executa busca binário quando o campo é base de ordenação
     /// (`Searchable.sortOn`) e busca linear nos outros casos.
-    func find(_ field: Field, equals value: String) -> Entry? {
+    public func find(_ field: Field, equals value: String) -> Entry? {
         if field == Self.sortedOn {
             return entries.binarySearch(for: value, on: field.getter)
                 .flatMap { result in
