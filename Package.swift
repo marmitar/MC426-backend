@@ -7,14 +7,24 @@ let package = Package(
        .macOS(.v10_15)
     ],
     dependencies: [
-        // 💧 A server-side Swift web framework.
+        // A server-side Swift web framework.
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
     ],
     targets: [
         .target(
-            name: "App",
+            name: "Services",
             dependencies: [
                 .product(name: "Vapor", package: "vapor")
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-cross-module-optimization"], .when(configuration: .release))
+            ]
+        ),
+        .target(
+            name: "App",
+            dependencies: [
+                .product(name: "Vapor", package: "vapor"),
+                .target(name: "Services")
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of
@@ -28,5 +38,6 @@ let package = Package(
             .target(name: "App"),
             .product(name: "XCTVapor", package: "vapor"),
         ])
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )
