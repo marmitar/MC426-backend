@@ -98,7 +98,7 @@ private class WebScrapingScript {
     ///   com seu valor parseado.
     func parseFilesWith<T>(parser parse: (Data) throws -> T) throws -> [String: T] {
 
-        let parsed = try allFiles().map { filename -> (String, T) in
+        let parsed = try allFiles().concurrentMap { filename -> (String, T) in
             let contents = try Data(contentsOf: filename)
             let name = filename.deletingPathExtension().lastPathComponent
 
