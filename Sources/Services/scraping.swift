@@ -1,4 +1,63 @@
 import Foundation
+import Logging
+
+/// Algum dado que é recuperado por um dos
+/// scipts de Web Scraping.
+public protocol WebScrapable: Decodable {
+    static var scriptName: String { get }
+}
+
+/// Executa a função, marcando o tempo demorado.
+private func timed<T>(run: () throws -> T) rethrows -> (elapsed: Double, value: T) {
+    let start = DispatchTime.now()
+    let value = try run()
+    let end = DispatchTime.now()
+
+    let diff = end.uptimeNanoseconds - start.uptimeNanoseconds
+    let elapsed = Double(diff) / 1E9
+    return (elapsed, value)
+}
+
+public extension WebScrapable {
+    /// Executa o script de Scraping e parseia o resultado.
+    ///
+    /// Usa um logger para avisar o estado da execução.
+    ///
+    /// - Returns: Dicionário com o nome de cada arquivo construído
+    ///   e seus resultados parseados.
+    static func scrape(logger: Logger? = nil) throws -> [String: [Self]] {
+        logger?.info("Scraping with \(self.scriptName)...")
+        let script = WebScrapingScript(filename: self.scriptName)
+
+        // executa o script apenas se necessário
+        if !script.buildFolderExists {
+            logger?.info("Rebuilding artifacts for \(self.scriptName)...")
+            let (elapsed, ()) = try timed {
+                try script.cleanExecution()
+            }
+            logger?.info("\(self.scriptName) done in \(elapsed) secs.")
+        }
+
+        let (elapsed, parsed) = try timed {
+            try script.parseFilesWith { data in
+                try JSONDecoder().decode([Self].self, from: data)
+            }
+        }
+        logger?.info("Decoded \(self.scriptName) in \(elapsed) secs.")
+
+        return parsed
+    }
+
+    /// Executa o script de Scraping e parseia todos os resultados.
+    ///
+    /// Usa um logger para avisar o estado da execução.
+    ///
+    /// - Returns: Os resultados de todos os arquivos parseados.
+    static func scrapeJoined(logger: Logger? = nil) throws -> [Self] {
+        try self.scrape(logger: logger).flatMap { _, value in value }
+    }
+}
+
 
 /// Um dos scripts em Python dentro da pasta `/Scraping`.
 private class WebScrapingScript {
