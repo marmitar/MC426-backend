@@ -85,7 +85,7 @@ private class WebScrapingScript {
     /// - Parameter filename: Nome do arquivo com o script,
     ///   possívelmente com uma extensão.
     convenience init(filename: String) {
-        self.init(name: filename.stripExtension())
+        self.init(name: filename.strippedExtension())
     }
 
     /// Remove diretório de saída do script (`buildFolder`), se existir.

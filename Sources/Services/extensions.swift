@@ -1,11 +1,17 @@
 import Foundation
 
-extension Collection {
+public extension Collection {
     /// Acesso opcional na coleção para posições que podem
     /// ser inválidas.
     ///
     /// - Returns: `nil` quando a posição requisitada
     ///   não contém um elemento associado.
+    ///
+    /// ```swift
+    /// ["a", "b", "c"].get(at: 1) == "b"
+    ///
+    /// ["a", "b"].get(at: 2) == nil
+    /// ```
     func get(at position: Index) -> Element? {
         if self.indices.contains(position) {
             return self[position]
@@ -46,7 +52,7 @@ private class Mutex<T> {
     }
 }
 
-public extension RandomAccessCollection where Self.SubSequence == ArraySlice<Element> {
+public extension RandomAccessCollection where SubSequence == ArraySlice<Element> {
     /// Versão concorrente do ``Array.forEach``.
     ///
     /// Pode ser executada em ordem diferente da esperada.
@@ -132,17 +138,98 @@ public extension RandomAccessCollection where Self.SubSequence == ArraySlice<Ele
     }
 }
 
-extension StringProtocol {
+extension MutableCollection where Self: RandomAccessCollection {
+    /// Ordena a coleção usando uma chave de comparação.
+    ///
+    /// - Complexity: O(*n* log *n*)
+    mutating func sort<T: Comparable>(on key: (Element) throws -> T) rethrows {
+        try self.sort { try key($0) < key($1) }
+    }
+}
+
+extension RandomAccessCollection where Index: BinaryInteger {
+    /// Busca binária em um vetor ordenado.
+    ///
+    /// - Parameter searchKey: Chave a ser buscada.
+    /// - Parameter key: Acessor da chave em cada elemento.
+    /// - Parameter areInIncreasingOrder: Predicado que diz se
+    ///   um chave vem antes da outra (deve ser ordem estrita).
+    ///
+    /// - Returns: O valor com chave mais próxima de `searchKey`,
+    ///   mais ainda menor ou igual (exceto quando todos são
+    ///   maiores).
+    ///
+    /// - Complexity: O(*n* log *n*)
+    func binarySearch<T>(
+        for searchKey: T,
+        on key: (Element) throws -> T,
+        by areInIncreasingOrder: (T, T) throws -> Bool
+    ) rethrows -> Element? {
+        var lo = self.startIndex
+        var hi = self.index(lo, offsetBy: self.count)
+
+        var result: Element? = nil
+        while lo < hi {
+            let mid = (lo + hi) / 2
+            result = self[mid]
+            let midKey = try key(self[mid])
+
+            if try areInIncreasingOrder(midKey, searchKey) {
+                lo = mid + 1
+            } else if try areInIncreasingOrder(searchKey, midKey) {
+                hi = mid
+            } else {
+                return result
+            }
+        }
+        return result
+    }
+
+    /// Busca binária em um vetor ordenado.
+    ///
+    /// - Parameter searchKey: chave a ser buscada.
+    /// - Parameter key: acessor da chave em cada elemento.
+    ///
+    /// - Returns: O valor com chave mais próxima de `searchKey`,
+    ///   mais ainda menor ou igual (exceto quando todos são
+    ///   maiores).
+    ///
+    /// - Complexity: O(log *n*)
+    func binarySearch<T: Comparable>(
+        for searchKey: T,
+        on key: (Element) throws -> T
+    ) rethrows -> Element? {
+        try self.binarySearch(for: searchKey, on: key, by: <)
+    }
+}
+
+/// Localização POSIX para remoção de acentos.
+private let usPosixLocale = Locale(identifier: "en_US_POSIX")
+
+public extension StringProtocol {
     /// Remove a extensão do nome do arquivo.
     ///
     /// ```swift
-    /// "arquivo.py".stripExtension() == "arquivo"
+    /// "arquivo.py".strippedExtension() == "arquivo"
     /// ```
-    func stripExtension() -> String {
+    func strippedExtension() -> String {
         var components = self.components(separatedBy: ".")
         if components.count > 1 {
             components.removeLast()
         }
         return components.joined(separator: ".")
+    }
+
+    /// Normalização da String para comparação.
+    ///
+    /// Remove acentos e padroniza a String para não ter diferença
+    /// entre maiúsculas e minúsculas, além de tratar problemas de
+    /// representação com Unicode.
+    func normalized() -> String {
+        // de https://forums.swift.org/t/string-case-folding-and-normalization-apis/14663/7
+        self.folding(
+            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+            locale: usPosixLocale
+        )
     }
 }
