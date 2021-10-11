@@ -239,4 +239,12 @@ extension StringProtocol {
             locale: usPosixLocale
         )
     }
+
+    /// Lista de palavras na string.
+    ///
+    /// Ignora espeços consecutivos.
+    func splitWords() -> [String] {
+        self.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+    }
 }
