@@ -21,18 +21,20 @@ public extension WebScrapable {
         // executa o script apenas se necessário
         if !script.buildFolderExists {
             logger?.info("Rebuilding artifacts for \(self.scriptName)...")
-            let elapsed = try timed {
+            let elapsed = try withTiming {
                 try script.cleanExecution()
             }
-            logger?.info("\(self.scriptName) done in \(elapsed) secs.")
+            let totalFiles = try script.allFiles().count
+            logger?.info("\(self.scriptName) done with \(totalFiles) files in \(elapsed) secs.")
         }
 
-        let (elapsed, parsed) = try timed {
+        let (elapsed, parsed) = try withTiming {
             try script.parseFilesWith { data in
                 try JSONDecoder().decode([Self].self, from: data)
             }
         }
-        logger?.info("Decoded \(self.scriptName) in \(elapsed) secs.")
+        let totalSize = parsed.values.reduce(0) { $0 + $1.count }
+        logger?.info("Decoded \(self.scriptName) with \(totalSize) items in \(elapsed) secs.")
 
         return parsed
     }

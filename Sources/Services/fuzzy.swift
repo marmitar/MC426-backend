@@ -54,7 +54,7 @@ struct FuzzyCache {
     @inlinable
     func fullScore(for query: QueryString) -> Double {
         // de https://github.com/krisk/Fuse/blob/master/src/core/computeScore.js
-        return self.fields.reduce(0.0) { (totalScore, field) in
+        return self.fields.reduce(1.0) { (totalScore, field) in
             let score = field.score(for: query)
             return totalScore * pow(score, field.weight * field.norm)
         }

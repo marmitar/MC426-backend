@@ -253,7 +253,7 @@ extension StringProtocol {
 ///
 /// - Returns: tempo demorado e valor retornado.
 @inlinable
-func timed<T>(run: () throws -> T) rethrows -> (elapsed: Double, value: T) {
+public func withTiming<T>(run: () throws -> T) rethrows -> (elapsed: Double, value: T) {
     let start = DispatchTime.now()
     let value = try run()
     let end = DispatchTime.now()
@@ -267,6 +267,6 @@ func timed<T>(run: () throws -> T) rethrows -> (elapsed: Double, value: T) {
 ///
 /// - Returns: tempo demorado.
 @inlinable
-func timed(run: () throws -> Void) rethrows -> Double {
-    try timed(run: run).elapsed
+public func withTiming(run: () throws -> Void) rethrows -> Double {
+    try withTiming(run: run).elapsed
 }

@@ -74,19 +74,18 @@ public struct Database<Item: Searchable> {
     /// Constrói banco de dados na memória com cache de busca.
     public init(entries data: [Item], logger: Logger? = nil) throws {
         // garante pesos positivos
-        if Item.properties.contains(where: { $0.weight > 0 }) {
+        if Item.properties.contains(where: { $0.weight <= 0 }) {
             throw NonPositiveWeightError(Item.self)
         }
-
         // só então monta os dados
         logger?.info("Buildind Database for \"\(Item.self)\"...")
 
-        let (elapsed, entries) = timed {
+        let (elapsed, entries) = withTiming {
             Self.buildEntries(for: data)
         }
         self.entries = entries
 
-        logger?.info("DB built in \(elapsed) secs.")
+        logger?.info("DB built with \(data.count) items in \(elapsed) secs.")
 
     }
 
@@ -121,6 +120,23 @@ public struct Database<Item: Searchable> {
                 field.getter(item) == value
             }?.item
         }
+    }
+
+    public func search(_ query: QueryString, limit: Int? = nil) -> ArraySlice<(item: Item, score: Double)> {
+        var scored = self.entries.concurrentMap { (item, cache) in
+            (item: item, score: cache.fullScore(for: query))
+        }
+        scored.sort(on: { $0.score })
+
+        if let limit = limit {
+            return scored.prefix(limit)
+        } else {
+            return scored[...]
+        }
+    }
+
+    public func search(_ text: String, limit: Int? = nil) -> ArraySlice<(item: Item, score: Double)> {
+        self.search(QueryString(text), limit: limit)
     }
 }
 
