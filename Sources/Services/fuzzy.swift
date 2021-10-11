@@ -5,7 +5,9 @@ import Fuzz
 public struct QueryString {
     /// Conteúdo da string em forma de buffer para
     /// trabalhar com a API de C.
-    fileprivate let content: ContiguousArray<UInt8>
+    private let content: ContiguousArray<CChar>
+    /// Tamanho do buffer, desconsiderando o byte null.
+    private let length: Int
 
     /// Prepara a string para comparação e para
     /// funcionar com a API de C.
@@ -16,7 +18,19 @@ public struct QueryString {
     /// unicode).
     init(_ from: String) {
         let (text, _) = Self.prepareAndCountWords(from)
-        self.content = .init(text.utf8)
+
+        self.content = ContiguousArray(text.utf8CString)
+        self.length = self.content.withUnsafeBufferPointer {
+            strlen($0.baseAddress!)
+        }
+    }
+
+    /// Acessa o pointeiro e o tamanho da string,
+    /// para trabalhar com C.
+    fileprivate func withUnsafePointer<R>(_ body: (UnsafePointer<CChar>, Int) throws -> R) rethrows -> R {
+        try self.content.withUnsafeBufferPointer {
+            try body($0.baseAddress!, self.length)
+        }
     }
 
     /// Faz a normalização descrita em `init`
@@ -65,7 +79,7 @@ struct FuzzyCache {
 /// [RapidFuzz](https://github.com/maxbachmann/rapidfuzz-cpp).
 private final class FuzzyField {
     /// Struct em C++ (com interface em C).
-    private let cached: FuzzCachedRatio
+    private var cached: FuzzCachedRatio
     /// Peso associado ao campo, para combinação de scores.
     let weight: Double
     /// Norma do campo, para combinação de scores.
@@ -75,12 +89,11 @@ private final class FuzzyField {
     /// strings e calcula a norma do campo.
     @inlinable
     init(_ value: String, _ weight: Double) {
-        var (text, words) = QueryString.prepareAndCountWords(value)
+        let (text, words) = QueryString.prepareAndCountWords(value)
 
-        self.cached = text.withUTF8 { ptr in
-            fuzz_cached_init(ptr.baseAddress!, ptr.count)
-        }
         self.weight = weight
+        // constroi com a API de C++
+        self.cached = text.withCString { fuzz_cached_init($0) }
         // norma baseada em https://github.com/krisk/Fuse/blob/master/src/tools/norm.js
         self.norm = 1 / Double(words).squareRoot()
     }
@@ -88,7 +101,7 @@ private final class FuzzyField {
     /// Precisa desalocar a memória em C++.
     @inlinable
     deinit {
-        fuzz_cached_deinit(self.cached)
+        fuzz_cached_deinit(&self.cached)
     }
 
     /// Compara a string no cache com `text`.
@@ -97,8 +110,8 @@ private final class FuzzyField {
     ///   0 (match perfeito) e 1 (completamente diferentes).
     @inlinable
     func score(for query: QueryString) -> Double {
-        let scoreValue = query.content.withUnsafeBufferPointer { ptr in
-            fuzz_cached_ratio(self.cached, ptr.baseAddress!, ptr.count)
+        let scoreValue = query.withUnsafePointer { ptr, len in
+            fuzz_cached_ratio(self.cached, ptr, len)
         }
         // garante o valor entre 0 e 1
         if scoreValue <= 0 {

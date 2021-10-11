@@ -123,7 +123,7 @@ public struct Database<Item: Searchable> {
     }
 
     public func search(_ query: QueryString, limit: Int? = nil) -> ArraySlice<(item: Item, score: Double)> {
-        var scored = self.entries.concurrentMap { (item, cache) in
+        var scored = self.entries.map { (item, cache) in
             (item: item, score: cache.fullScore(for: query))
         }
         scored.sort(on: { $0.score })

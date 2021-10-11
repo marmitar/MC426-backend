@@ -54,7 +54,7 @@ let package = Package(
                 // habilita warnings e errors
                 .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic", "-Werror"]),
                 .define("_FORTIFY_SOURCE", to: "1"),
-                .unsafeFlags(["-O1"], .when(configuration: .debug)),
+                .unsafeFlags(["-O1", "-ggdb3"], .when(configuration: .debug)),
                 // flags de otimização
                 .define("NDEBUG", .when(configuration: .release)),
                 .unsafeFlags(["-O3", "-march=native", "-mtune=native"], .when(configuration: .release)),

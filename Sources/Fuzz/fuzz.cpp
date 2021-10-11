@@ -1,55 +1,73 @@
 #include <string>
 #include <rapidfuzz/fuzz.hpp>
-#include <rapidfuzz/string_metric.hpp>
 
-using rapidfuzz::common::BlockPatternMatchVector;
-using rapidfuzz::common::PatternMatchVector;
-using rapidfuzz::string_metric::detail::normalized_weighted_levenshtein;
+
+#define unlikely(x) (__builtin_expect((x),0))
+
+// Tipo de ratio escolhido para fuzzy matching.
+using CachedRatio = rapidfuzz::fuzz::CachedPartialTokenSortRatio<std::string_view>;
 
 extern "C" {
     #include "include/fuzz.h"
 
-    // A interface em C deve ser equivalente, em bytes.
-    static_assert(sizeof(FuzzCachedRatio::block) == sizeof(BlockPatternMatchVector),
-        "Invalid description for FuzzCachedRatio::block, please update.");
-
-    __attribute__((nonnull, leaf, nothrow))
-    FuzzCachedRatio fuzz_cached_init(const uint8_t *str, size_t len) {
+    static __attribute__((const, nothrow))
+    /** Cache inicializado com ponteiros nulos. */
+    FuzzCachedRatio fuzz_cached_null(void) {
         FuzzCachedRatio cached;
-
-        // tamanho da string no cache
-        cached.buflen = len;
-        // aloca nova string e copia conteúdo
-        cached.buffer = (uint8_t *) malloc(len);
-        memcpy(cached.buffer, str, len * sizeof(uint8_t));
-        // inicializa o cache no espaço reservado
-        new (&cached.block) BlockPatternMatchVector(
-            std::basic_string_view(str, len)
-        );
+        cached.buffer = NULL;
+        cached.buflen = 0;
+        cached.block = NULL;
         return cached;
     }
 
-    __attribute__((const, nonnull, leaf, nothrow))
-    double fuzz_cached_ratio(const FuzzCachedRatio cached, const uint8_t *str, size_t len) {
-        // usa o bloco do espaço reservado
-        auto block = (BlockPatternMatchVector *) &cached.block;
-        // e calcula o score com em rapidfuz::CachedRatio::ratio
-        double score = normalized_weighted_levenshtein(
-            std::basic_string_view(str, len),
-            *block,
-            std::basic_string_view(cached.buffer, cached.buflen),
-            0.0
+    __attribute__((nonnull, leaf, nothrow))
+    FuzzCachedRatio fuzz_cached_init(const char *str) {
+        FuzzCachedRatio cache = fuzz_cached_null();
+
+        // tamanho da string no cache
+        cache.buflen = strlen(str);
+        // aloca nova string e copia conteúdo
+        cache.buffer = (char *) malloc(cache.buflen + 1);
+        if unlikely(cache.buffer == NULL) {
+            return fuzz_cached_null();
+        }
+        memcpy(cache.buffer, str, cache.buflen);
+        cache.buffer[cache.buflen] = 0;
+
+        // inicializa o cache no espaço reservado
+        cache.block = new CachedRatio (
+            std::string_view(cache.buffer, cache.buflen)
         );
+        return cache;
+    }
+
+    __attribute__((pure, nonnull, leaf, nothrow))
+    double fuzz_cached_ratio(const FuzzCachedRatio cached, const char *str, size_t len) {
+
+        if unlikely(cached.buffer == NULL || cached.block == NULL) {
+            return 1;
+        }
+        // usa o bloco do espaço reservado
+        auto block = (const CachedRatio *) cached.block;
+        // e calcula o score com em rapidfuz::CachedRatio::ratio
+        double score = block->ratio(std::string_view(str, len));
         // adapta o valor
         return 1 - (score / 100);
     }
 
-    __attribute__((leaf, nothrow))
-    void fuzz_cached_deinit(FuzzCachedRatio cached) {
+    __attribute__((nonnull, leaf, nothrow))
+    void fuzz_cached_deinit(FuzzCachedRatio *cached) {
         // destrói o cache primeiro
-        auto block = (BlockPatternMatchVector *) &cached.block;
-        block->~BlockPatternMatchVector();
+        if unlikely(cached->block != NULL) {
+            auto block = (CachedRatio *) cached->block;
+            block->~CachedRatio();
+            cached->block = NULL;
+        }
         // então desaloca a string
-        free(cached.buffer);
+        if unlikely(cached->buffer != NULL) {
+            free(cached->buffer);
+            cached->buffer = NULL;
+            cached->buflen = 0;
+        }
     }
 }
