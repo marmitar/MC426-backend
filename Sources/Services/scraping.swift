@@ -7,17 +7,6 @@ public protocol WebScrapable: Decodable {
     static var scriptName: String { get }
 }
 
-/// Executa a função, marcando o tempo demorado.
-private func timed<T>(run: () throws -> T) rethrows -> (elapsed: Double, value: T) {
-    let start = DispatchTime.now()
-    let value = try run()
-    let end = DispatchTime.now()
-
-    let diff = end.uptimeNanoseconds - start.uptimeNanoseconds
-    let elapsed = Double(diff) / 1E9
-    return (elapsed, value)
-}
-
 public extension WebScrapable {
     /// Executa o script de Scraping e parseia o resultado.
     ///
@@ -32,7 +21,7 @@ public extension WebScrapable {
         // executa o script apenas se necessário
         if !script.buildFolderExists {
             logger?.info("Rebuilding artifacts for \(self.scriptName)...")
-            let (elapsed, ()) = try timed {
+            let elapsed = try timed {
                 try script.cleanExecution()
             }
             logger?.info("\(self.scriptName) done in \(elapsed) secs.")

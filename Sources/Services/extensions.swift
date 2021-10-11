@@ -248,3 +248,25 @@ extension StringProtocol {
             .filter { !$0.isEmpty }
     }
 }
+
+/// Executa a função, marcando o tempo demorado.
+///
+/// - Returns: tempo demorado e valor retornado.
+@inlinable
+func timed<T>(run: () throws -> T) rethrows -> (elapsed: Double, value: T) {
+    let start = DispatchTime.now()
+    let value = try run()
+    let end = DispatchTime.now()
+
+    let diff = end.uptimeNanoseconds - start.uptimeNanoseconds
+    let elapsed = Double(diff) / 1E9
+    return (elapsed, value)
+}
+
+/// Executa a função, marcando o tempo demorado.
+///
+/// - Returns: tempo demorado.
+@inlinable
+func timed(run: () throws -> Void) rethrows -> Double {
+    try timed(run: run).elapsed
+}
