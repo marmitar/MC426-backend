@@ -40,9 +40,26 @@ let package = Package(
         .target(
             name: "Services",
             dependencies: [
-                .product(name: "Logging", package: "swift-log")
+                .product(name: "Logging", package: "swift-log"),
+                .target(name: "Fuzz")
             ],
             swiftSettings: swiftSettings
+        ),
+        // integração com RapidFuzz
+        .target(
+            name: "Fuzz",
+            exclude: ["RapidFuzz"],
+            cxxSettings: [
+                .headerSearchPath("RapidFuzz"),
+                // habilita warnings e errors
+                .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic", "-Werror"]),
+                .define("_FORTIFY_SOURCE", to: "1"),
+                .unsafeFlags(["-O1"], .when(configuration: .debug)),
+                // flags de otimização
+                .define("NDEBUG", .when(configuration: .release)),
+                .unsafeFlags(["-O3", "-march=native", "-mtune=native"], .when(configuration: .release)),
+                .unsafeFlags([ "-pipe", "-fno-plt", "-ffast-math"], .when(configuration: .release)),
+            ]
         ),
         // testes do servidor
         .testTarget(name: "AppTests", dependencies: [
@@ -50,5 +67,7 @@ let package = Package(
             .product(name: "XCTVapor", package: "vapor"),
         ])
     ],
-    swiftLanguageVersions: [.v5]
+    swiftLanguageVersions: [.v5],
+    cLanguageStandard: .gnu2x,
+    cxxLanguageStandard: .gnucxx20
 )

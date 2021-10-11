@@ -1,0 +1,5 @@
+module Fuzz {
+    requires cplusplus17
+
+    private header "fuzz.h"
+}
