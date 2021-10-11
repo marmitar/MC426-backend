@@ -51,7 +51,7 @@ public extension WebScrapable {
 
 
 /// Um dos scripts em Python dentro da pasta `/Scraping`.
-private class WebScrapingScript {
+private struct WebScrapingScript {
     /// Caminho para o script.
     fileprivate let script: URL
     /// Pasta com os artefatos gerados pelo script.
@@ -75,7 +75,7 @@ private class WebScrapingScript {
     ///
     /// - Parameter filename: Nome do arquivo com o script,
     ///   possívelmente com uma extensão.
-    convenience init(filename: String) {
+    init(filename: String) {
         self.init(name: filename.strippedExtension())
     }
 

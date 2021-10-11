@@ -24,7 +24,7 @@ public protocol SearchableProperty: CaseIterable, Equatable {
 }
 
 /// Conjunto imutável de um mesmo tipo de dados procuráveis.
-public class Database<Entry: Searchable> {
+public struct Database<Entry: Searchable> {
     /// Campos procuráveis do dado.
     public typealias Field = Entry.Properties
     /// Campo de ordenação.

@@ -14,7 +14,7 @@ public func configure(_ app: Application) throws {
 }
 
 /// Controlador de dados recuperados por Web Scraping.
-class ScrapedData: StorageKey {
+final class ScrapedData: StorageKey {
     typealias Value = ScrapedData
     /// Controlador de disciplinas.
     private let disciplines: Discipline.Controller

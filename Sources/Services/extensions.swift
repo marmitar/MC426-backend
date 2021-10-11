@@ -26,7 +26,7 @@ public extension Collection {
 /// # Obsercação
 ///
 /// Não é seguro em usos gerais.
-private class Mutex<T> {
+private struct Mutex<T> {
     private let inner = NSLock()
     private var value: T
 
@@ -35,7 +35,7 @@ private class Mutex<T> {
     }
 
     /// Executa uma ação com controle da mutex.
-    func withLock<U>(perform: (inout T) throws -> U) rethrows -> U {
+    mutating func withLock<U>(perform: (inout T) throws -> U) rethrows -> U {
         self.inner.lock()
         defer { self.inner.unlock() }
 
@@ -64,7 +64,7 @@ public extension RandomAccessCollection where SubSequence == ArraySlice<Element>
             execute: (Element) throws -> Void,
             onError: (Error) throws -> Void
         ) rethrows {
-            let err = Mutex<Error?>(nil)
+            var err = Mutex<Error?>(nil)
 
             DispatchQueue.concurrentPerform(iterations: self.count) { position in
                 let index = self.index(
@@ -89,7 +89,7 @@ public extension RandomAccessCollection where SubSequence == ArraySlice<Element>
     ///
     /// O resultado pode ter uma ordem diferente da esperada.
     func concurrentMap<T>(_ transform: (Element) throws -> T) rethrows -> [T] {
-        let transformed = Mutex<[T]>([])
+        var transformed = Mutex<[T]>([])
 
         try self.concurrentForEach { item in
             let newItem = try transform(item)
@@ -107,7 +107,7 @@ public extension RandomAccessCollection where SubSequence == ArraySlice<Element>
     func concurrentFlatMap<Segment: Sequence>(
         _ transform: (Element) throws -> Segment
     ) rethrows -> [Segment.Element] {
-        let transformed = Mutex<[Segment.Element]>([])
+        var transformed = Mutex<[Segment.Element]>([])
 
         try self.concurrentForEach { item in
             let newSequence = try transform(item)
@@ -125,7 +125,7 @@ public extension RandomAccessCollection where SubSequence == ArraySlice<Element>
     func concurrentCompactMap<Result>(
         _ transform: (Element) throws -> Result?
     ) rethrows -> [Result] {
-        let transformed = Mutex<[Result]>([])
+        var transformed = Mutex<[Result]>([])
 
         try self.concurrentForEach { item in
             if let newItem = try transform(item) {
