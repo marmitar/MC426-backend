@@ -51,5 +51,16 @@ extension Discipline: Searchable {
                     return item.name
             }
         }
+
+        var weight: Double {
+            switch self {
+                // maior peso para o código, que é mais exato
+                case .code:
+                    return 0.6
+                // mas o nome também é útil
+                case .name:
+                    return 0.4
+            }
+        }
     }
 }

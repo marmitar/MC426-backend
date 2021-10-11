@@ -16,5 +16,10 @@ extension Discipline {
         func get(code: String) -> Discipline? {
             self.db.find(.code, equals: code)
         }
+
+        /// Busca apenas entre as disciplinas.
+        func search(for text: String, limit: Int?) -> ArraySlice<(item: Discipline, score: Double)> {
+            self.db.search(text, limit: limit)
+        }
     }
 }
