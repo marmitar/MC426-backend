@@ -12,6 +12,7 @@ public extension Collection {
     ///
     /// ["a", "b"].get(at: 2) == nil
     /// ```
+    @inlinable
     func get(at position: Index) -> Element? {
         if self.indices.contains(position) {
             return self[position]
@@ -30,11 +31,13 @@ private struct Mutex<T> {
     private let inner = NSLock()
     private var value: T
 
+    @inlinable
     init(_ value: T) {
         self.value = value
     }
 
     /// Executa uma ação com controle da mutex.
+    @inlinable
     mutating func withLock<U>(perform: (inout T) throws -> U) rethrows -> U {
         self.inner.lock()
         defer { self.inner.unlock() }
@@ -47,12 +50,13 @@ private struct Mutex<T> {
     /// # Cuidado
     ///
     /// Usar apenas após todas as operações com a mutex.
+    @inlinable
     func get() -> T {
         self.value
     }
 }
 
-public extension RandomAccessCollection where SubSequence == ArraySlice<Element> {
+extension RandomAccessCollection {
     /// Versão concorrente do ``Array.forEach``.
     ///
     /// Pode ser executada em ordem diferente da esperada.
@@ -138,16 +142,17 @@ public extension RandomAccessCollection where SubSequence == ArraySlice<Element>
     }
 }
 
-public extension MutableCollection where Self: RandomAccessCollection {
+extension MutableCollection where Self: RandomAccessCollection {
     /// Ordena a coleção usando uma chave de comparação.
     ///
     /// - Complexity: O(*n* log *n*)
+    @inlinable
     mutating func sort<T: Comparable>(on key: (Element) throws -> T) rethrows {
         try self.sort { try key($0) < key($1) }
     }
 }
 
-public extension RandomAccessCollection where Index: BinaryInteger {
+extension RandomAccessCollection where Index: BinaryInteger {
     /// Busca binária em um vetor ordenado.
     ///
     /// - Parameter searchKey: Chave a ser buscada.
@@ -160,6 +165,7 @@ public extension RandomAccessCollection where Index: BinaryInteger {
     ///   maiores).
     ///
     /// - Complexity: O(*n* log *n*)
+    @inlinable
     func binarySearch<T>(
         for searchKey: T,
         on key: (Element) throws -> T,
@@ -195,6 +201,7 @@ public extension RandomAccessCollection where Index: BinaryInteger {
     ///   maiores).
     ///
     /// - Complexity: O(log *n*)
+    @inlinable
     func binarySearch<T: Comparable>(
         for searchKey: T,
         on key: (Element) throws -> T
@@ -206,7 +213,7 @@ public extension RandomAccessCollection where Index: BinaryInteger {
 /// Localização POSIX para remoção de acentos.
 private let usPosixLocale = Locale(identifier: "en_US_POSIX")
 
-public extension StringProtocol {
+extension StringProtocol {
     /// Remove a extensão do nome do arquivo.
     ///
     /// ```swift

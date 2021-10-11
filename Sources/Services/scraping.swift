@@ -53,9 +53,9 @@ public extension WebScrapable {
 /// Um dos scripts em Python dentro da pasta `/Scraping`.
 private struct WebScrapingScript {
     /// Caminho para o script.
-    fileprivate let script: URL
+    let script: URL
     /// Pasta com os artefatos gerados pelo script.
-    fileprivate let buildFolder: URL
+    let buildFolder: URL
 
     /// Prepara os caminhos usados pelo script.
     ///
