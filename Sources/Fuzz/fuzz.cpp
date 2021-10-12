@@ -75,4 +75,14 @@ extern "C" {
             cached->buflen = 0;
         }
     }
+
+    __attribute__((pure, nonnull, leaf, nothrow))
+    double fuzz_levenshtein(const char *s1, size_t len1, const char *s2, size_t len2) {
+        // só chama a função do rapidfuzz
+        double score = rapidfuzz::string_metric::normalized_levenshtein(
+            std::string_view(s1, len1), std::string_view(s2, len2)
+        );
+        // e adapta o valor
+        return 1 - (score / 100);
+    }
 }

@@ -8,7 +8,7 @@ public struct QueryString {
     /// trabalhar com a API de C.
     private let content: ContiguousArray<CChar>
     /// Tamanho do buffer, desconsiderando o byte null.
-    private let length: Int
+    let length: Int
 
     /// Prepara a string para comparação e para
     /// funcionar com a API de C.
@@ -73,7 +73,7 @@ struct FuzzyCache {
         // de https://github.com/krisk/Fuse/blob/master/src/core/computeScore.js
         return self.fields.reduce(1.0) { (totalScore, field) in
             let score = field.score(for: query)
-            return totalScore * pow(score, field.weight * field.norm)
+            return totalScore * pow(score, field.weight)
         }
     }
 }
@@ -85,20 +85,16 @@ private final class FuzzyField {
     private var cached: FuzzCachedRatio
     /// Peso associado ao campo, para combinação de scores.
     let weight: Double
-    /// Norma do campo, para combinação de scores.
-    let norm: Double
 
     /// Constrói cache de `value` para comparação com outras
     /// strings e calcula a norma do campo.
     @inlinable
     init(_ value: String, _ weight: Double) {
-        let (text, words) = QueryString.prepareAndCountWords(value)
+        let (text, _) = QueryString.prepareAndCountWords(value)
 
         self.weight = weight
         // constroi com a API de C++
         self.cached = text.withCString { fuzz_cached_init($0) }
-        // norma baseada em https://github.com/krisk/Fuse/blob/master/src/tools/norm.js
-        self.norm = 1 / Double(words).squareRoot()
     }
 
     /// Precisa desalocar a memória em C++.
@@ -106,6 +102,9 @@ private final class FuzzyField {
     deinit {
         fuzz_cached_deinit(&self.cached)
     }
+
+    /// Menor valor que para usar o partial ratio.
+    static let minScore = 0.01
 
     /// Compara a string no cache com `text`.
     ///
@@ -116,13 +115,16 @@ private final class FuzzyField {
         let scoreValue = query.withUnsafePointer { ptr, len in
             fuzz_cached_ratio(self.cached, ptr, len)
         }
-        // garante o valor entre 0 e 1
-        if scoreValue <= 0 {
-            return 0.0
-        } else if scoreValue >= 1 {
-            return 1.0
-        } else {
-            return scoreValue
+        // se o score for grande o bastante, então retorna ele
+        if scoreValue > Self.minScore {
+            return scoreValue.clamped(upTo: 1.0)
         }
+
+        // senão, calcula um novo score, usando levenshtein diretamente
+        let newScore = query.withUnsafePointer { ptr, len in
+            fuzz_levenshtein(self.cached.buffer, self.cached.buflen, ptr, len)
+        }
+        // garante o resultado no intervalo (0, minScore].
+        return (newScore * Self.minScore).clamped(from: Double.ulpOfOne, upTo: 1)
     }
 }

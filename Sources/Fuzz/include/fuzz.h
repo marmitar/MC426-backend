@@ -46,4 +46,12 @@ __attribute__((pure, nonnull, leaf, nothrow));
 void fuzz_cached_deinit(FuzzCachedRatio *cached)
 __attribute__((nonnull, leaf, nothrow));
 
+/**
+ * Calcula a distância de Levenshtein normalizada.
+ *
+ * @see https://maxbachmann.github.io/RapidFuzz/string_metric.html#normalized-levenshtein
+ */
+double fuzz_levenshtein(const char *s1, size_t len1, const char *s2, size_t len2)
+__attribute__((pure, nonnull, leaf, nothrow));
+
 #endif // __FUZZ_H__

@@ -53,7 +53,7 @@ let package = Package(
                 .headerSearchPath("RapidFuzz"),
                 // Modo de cálculo do score, usando uma das classes em
                 // https://github.com/maxbachmann/rapidfuzz-cpp#readme
-                .define("RATIO_TYPE", to: "CachedRatio"),
+                .define("RATIO_TYPE", to: "CachedPartialRatio"),
                 // habilita warnings e errors
                 .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic"]),
                 .define("_FORTIFY_SOURCE", to: "1"),
