@@ -3,24 +3,43 @@ import Vapor
 import Services
 
 
-/// Dados que podem ser reduzidos durante a busca.
+/// Dados que podem ser após a busca.
 ///
 /// A forma reduzida é usada para enviar menos informação
 /// para o cliente, removendo alguns campos que só são
 /// úteis quando requisitados epsecificamente.
-protocol Reduceable: Searchable {
+protocol Matchable: Searchable {
     /// Forma reduzida do dado, usada como preview
     /// durante a busca.
-    associatedtype ReducedForm: Encodable
+    associatedtype ReducedForm: EncodableMatch
 
     /// Reduz o dado.
     func reduced() -> ReducedForm
 }
 
+extension Matchable {
+    /// Nome do tipo em letras minúsculas, usado
+    /// como valor do `ReducedForm.content`.
+    static func contentName() -> String {
+        "\(Self.self)".lowercased()
+    }
+}
+
+/// Conteúdo retornado por uma match, contendo um
+/// campo que descreve seu tipo.
+protocol EncodableMatch: Encodable {
+    /// Descrição do tipo.
+    var content: String { get }
+
+    /// Definido para marcar o campo 'content' para encode.
+    /// https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types
+    associatedtype CodingKeys: CodingKey
+}
+
 /// Controlador de dados buscáveis.
 protocol ContentController {
     /// Tipo do dado que ele controla.
-    associatedtype Content: Reduceable
+    associatedtype Content: Matchable
 
     /// Busca textual no conjunto de dados.
     ///

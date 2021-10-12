@@ -10,7 +10,6 @@ public func configure(_ app: Application) throws {
 
     // recupera dados por scraping
     app.storage[ScrapedData.self] = try .init(app)
-
     // register routes
     try routes(app)
 }

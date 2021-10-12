@@ -30,12 +30,11 @@ extension Discipline: WebScrapable {
 }
 
 extension Discipline: Searchable {
-    typealias Properties = DisciplineProperties
-
+    /// Ordena por código, para buscar mais rápido.
     static let sortOn: Properties? = .code
 
     /// Propriedades buscáveis na disciplina.
-    enum DisciplineProperties: SearchableProperty {
+    enum Properties: SearchableProperty {
         typealias Of = Discipline
 
         /// Busca por código da disciplina.
@@ -65,14 +64,21 @@ extension Discipline: Searchable {
     }
 }
 
-extension Discipline: Reduceable {
-    typealias ReducedForm = ReducedDiscipline
-
+extension Discipline: Matchable {
     /// Forma reduzida da disciplina, com
     /// apenas nome e código.
-    struct ReducedDiscipline: Content {
+    struct ReducedForm: EncodableMatch {
+        /// Descrição da match como disciplina.
+        let content = Discipline.contentName()
+
         let code: String
         let name: String
+
+        enum CodingKeys: CodingKey {
+            case content
+            case code
+            case name
+        }
     }
 
     @inlinable
