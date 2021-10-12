@@ -67,18 +67,9 @@ extension Discipline: Searchable {
 extension Discipline: Matchable {
     /// Forma reduzida da disciplina, com
     /// apenas nome e código.
-    struct ReducedForm: EncodableMatch {
-        /// Descrição da match como disciplina.
-        let content = Discipline.contentName()
-
+    struct ReducedForm: Encodable {
         let code: String
         let name: String
-
-        enum CodingKeys: CodingKey {
-            case content
-            case code
-            case name
-        }
     }
 
     @inlinable

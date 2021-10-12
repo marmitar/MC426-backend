@@ -11,29 +11,21 @@ import Services
 protocol Matchable: Searchable {
     /// Forma reduzida do dado, usada como preview
     /// durante a busca.
-    associatedtype ReducedForm: EncodableMatch
+    associatedtype ReducedForm: Encodable
 
     /// Reduz o dado.
     func reduced() -> ReducedForm
+
+    /// Nome que identifica o tipo no frontend.
+    ///
+    /// Usa o nome do tipo em minúsculas por padrão
+    static var contentName: String { get }
 }
 
 extension Matchable {
-    /// Nome do tipo em letras minúsculas, usado
-    /// como valor do `ReducedForm.content`.
-    static func contentName() -> String {
+    static var contentName: String {
         "\(Self.self)".lowercased()
     }
-}
-
-/// Conteúdo retornado por uma match, contendo um
-/// campo que descreve seu tipo.
-protocol EncodableMatch: Encodable {
-    /// Descrição do tipo.
-    var content: String { get }
-
-    /// Definido para marcar o campo 'content' para encode.
-    /// https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types
-    associatedtype CodingKeys: CodingKey
 }
 
 /// Controlador de dados buscáveis.
@@ -76,8 +68,9 @@ extension ContentController {
         var results = self.search(for: text, upTo: maxScore)
         results.sort(on: { $0.score })
 
+        let contentName = Content.contentName;
         return results.prefix(matches).map {
-            Match($0.item.reduced(), $0.score)
+            Match($0.item.reduced(), $0.score, contentName)
         }
     }
 }
@@ -92,24 +85,49 @@ struct Match {
     let item: Encodable
     /// O score do item, usado para comparação.
     let score: Double
+    /// Descrição do conteúdo, para ser usado no front.
+    let content: String
 
-    fileprivate init(_ item: Encodable, _ score: Double) {
+    fileprivate init(_ item: Encodable, _ score: Double, _ content: String) {
         self.item = item
         self.score = score
+        self.content = content
+    }
+
+    /// Se o score da match deve ser enviada também.
+    private static var sendScore = false
+    /// Ajusta para enviar scores no resultado.
+    static func encodeScoresForSending() {
+        self.sendScore = true
     }
 }
 
 extension Match: Content {
-    /// Não faz sentido receber um `Match` do cliente.
+    /// Não faz sentido receber um `Match` do cliente,
+    /// mas é necessário para funcionamento com o Vapor.
     init(from decoder: Decoder) throws {
         throw DecodingError.typeMismatch(Never.self, .init(
             codingPath: [],
-            debugDescription: "Can't decode to a MatchedContent"
+            debugDescription: "Can't decode to a Match"
         ))
     }
 
-    /// Um `Match` é formatado exatamente como seu item interno.
+    /// Um `Match` é formatado como seu item interno, além
+    /// da descrição e possivelmente do score.
     func encode(to encoder: Encoder) throws {
+        // encoda o item primeiro
         try self.item.encode(to: encoder)
+        // depois a descrição e o score
+        var container = encoder.container(keyedBy: MatchKeys.self)
+        try container.encode(self.content, forKey: .content)
+        if Self.sendScore {
+            try container.encode(self.score, forKey: .score)
+        }
+    }
+
+    /// Chaves adicionais da match.
+    private enum MatchKeys: CodingKey {
+        case score
+        case content
     }
 }

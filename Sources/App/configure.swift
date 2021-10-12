@@ -7,6 +7,10 @@ public func configure(_ app: Application) throws {
     app.http.server.configuration.serverName = "Planejador de Disciplinas"
     // serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+    // envia scores quando em modo de desenvolvimento
+    if !app.environment.isRelease {
+        Match.encodeScoresForSending()
+    }
 
     // recupera dados por scraping
     app.storage[ScrapedData.self] = try .init(app)
