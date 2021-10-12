@@ -18,6 +18,13 @@ public func configure(_ app: Application) throws {
     try routes(app)
 }
 
+private extension Application {
+    /// Executa closure assincronamente, útil para configuração.
+    func asyncConfig<T>(run: @escaping () throws -> T) -> EventLoopFuture<T> {
+        self.threadPool.runIfActive(eventLoop: self.eventLoopGroup.next(), run)
+    }
+}
+
 /// Controlador de dados recuperados por Web Scraping.
 final class ScrapedData: StorageKey {
     typealias Value = ScrapedData
@@ -27,8 +34,13 @@ final class ScrapedData: StorageKey {
     private let disciplines: Discipline.Controller
 
     fileprivate init(_ app: Application) throws {
+        // inicia thread para preparar os dados
+        let disciplines = app.asyncConfig {
+            try Discipline.Controller(logger: app.logger)
+        }
+        // então monta o controlador global
         self.logger = app.logger
-        self.disciplines = try .init(logger: self.logger)
+        self.disciplines = try disciplines.wait()
     }
 
     /// Recupera uma disciplina pelo seu código.
