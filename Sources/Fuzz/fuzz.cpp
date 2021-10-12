@@ -1,11 +1,16 @@
 #include <string>
 #include <rapidfuzz/fuzz.hpp>
 
+// Escolha do tipo de ratio para o fuzzy matching.
+#ifndef RATIO_TYPE
+#warning "RATIO_TYPE undefined, defaulting to CachedRatio"
+#define RATIO_TYPE CachedRatio
+#endif
 
 #define unlikely(x) (__builtin_expect((x),0))
 
 // Tipo de ratio escolhido para fuzzy matching.
-using CachedRatio = rapidfuzz::fuzz::CachedPartialTokenSortRatio<std::string_view>;
+using CachedRatio = rapidfuzz::fuzz::RATIO_TYPE<std::string_view>;
 
 extern "C" {
     #include "include/fuzz.h"

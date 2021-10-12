@@ -78,15 +78,14 @@ public struct Database<Item: Searchable> {
             throw NonPositiveWeightError(Item.self)
         }
         // só então monta os dados
-        logger?.info("Buildind Database for \"\(Item.self)\"...")
+        logger?.info("Buildind Database for \(Item.self)...")
 
         let (elapsed, entries) = withTiming {
             Self.buildEntries(for: data)
         }
         self.entries = entries
 
-        logger?.info("DB built with \(data.count) items in \(elapsed) secs.")
-
+        logger?.info("DB for \(Item.self) built with \(data.count) items in \(elapsed) secs.")
     }
 
     /// Busca linear no conjunto de dados.

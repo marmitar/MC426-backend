@@ -3,23 +3,21 @@ import Vapor
 import Services
 
 
-/// Dados que podem ser após a busca.
+/// Dados que podem ser retornados após a busca.
 ///
 /// A forma reduzida é usada para enviar menos informação
 /// para o cliente, removendo alguns campos que só são
 /// úteis quando requisitados epsecificamente.
 protocol Matchable: Searchable {
+    /// Nome que identifica o tipo para o cliente.
+    static var contentName: String { get }
+
     /// Forma reduzida do dado, usada como preview
     /// durante a busca.
     associatedtype ReducedForm: Encodable
 
     /// Reduz o dado.
     func reduced() -> ReducedForm
-
-    /// Nome que identifica o tipo no frontend.
-    ///
-    /// Usa o nome do tipo em minúsculas por padrão
-    static var contentName: String { get }
 }
 
 extension Matchable {

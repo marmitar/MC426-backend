@@ -35,9 +35,11 @@ public struct QueryString {
     }
 
     /// Faz a normalização descrita em `init`
-    /// e conta a quantidade de palavras.
+    /// e conta a quantidade de palavras com
+    /// mais de 2 caracteres.
     fileprivate static func prepareAndCountWords(_ string: String) -> (text: String, words: Int) {
-        let words = string.normalized().splitWords()
+        let words = string.normalized().splitWords().filter { $0.count > 2 }
+
         return (text: words.joined(separator: " "), words: words.count)
     }
 }

@@ -51,8 +51,11 @@ let package = Package(
             exclude: ["RapidFuzz"],
             cxxSettings: [
                 .headerSearchPath("RapidFuzz"),
+                // Modo de cálculo do score, usando uma das classes em
+                // https://github.com/maxbachmann/rapidfuzz-cpp#readme
+                .define("RATIO_TYPE", to: "CachedRatio"),
                 // habilita warnings e errors
-                .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic", "-Werror"]),
+                .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic"]),
                 .define("_FORTIFY_SOURCE", to: "1"),
                 .unsafeFlags(["-O1", "-ggdb3"], .when(configuration: .debug)),
                 // flags de otimização

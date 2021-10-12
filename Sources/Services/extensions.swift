@@ -219,6 +219,7 @@ extension StringProtocol {
     /// ```swift
     /// "arquivo.py".strippedExtension() == "arquivo"
     /// ```
+    @inlinable
     func strippedExtension() -> String {
         var components = self.components(separatedBy: ".")
         if components.count > 1 {
@@ -243,6 +244,7 @@ extension StringProtocol {
     /// Lista de palavras na string.
     ///
     /// Ignora espeços consecutivos.
+    @inlinable
     func splitWords() -> [String] {
         self.components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }
