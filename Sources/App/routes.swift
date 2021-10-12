@@ -10,14 +10,18 @@ func routes(_ app: Application) throws {
     }
 
     // API: busca textual entre vários elementos.
-    api.get("busca") { req -> [Match] in
-        let params = try req.query.decode(SearchParams.self)
+    api.get("busca") { req -> EventLoopFuture<[Match]> in
 
-        return req.scrapedData.search(
-            for: params.query,
-            limitingTo: params.limit ?? 100,
-            maxScore: 0.9
-        )
+        let params = try req.query.decode(SearchParams.self)
+        // roda em async para não travar a aplicação
+        // https://docs.vapor.codes/4.0/async/#blocking
+        return req.application.threadPool.runIfActive(eventLoop: req.eventLoop) {
+            return req.scrapedData.search(
+                for: params.query,
+                limitingTo: params.limit ?? 100,
+                maxScore: 0.9
+            )
+        }
     }
 
     // API: dados para a página de uma disciplina
