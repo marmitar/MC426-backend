@@ -3,8 +3,10 @@ import Services
 import Vapor
 
 extension Discipline {
-    /// Controlador de disciplinas recuperadas por Scraping.
-    struct Controller {
+    /// Controlador das disciplinas recuperadas por Scraping.
+    struct Controller: ContentController {
+        typealias Content = Discipline
+
         private let db: Database<Discipline>
 
         init(logger: Logger? = nil) throws {
@@ -18,8 +20,8 @@ extension Discipline {
         }
 
         /// Busca apenas entre as disciplinas.
-        func search(for text: String, limit: Int?) -> ArraySlice<(item: Discipline, score: Double)> {
-            self.db.search(text, limit: limit)
+        func search(for text: String, upTo maxScore: Double) -> [(item: Discipline, score: Double)] {
+            self.db.search(text, upTo: maxScore)
         }
     }
 }

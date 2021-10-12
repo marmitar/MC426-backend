@@ -142,7 +142,7 @@ extension RandomAccessCollection {
     }
 }
 
-extension MutableCollection where Self: RandomAccessCollection {
+public extension MutableCollection where Self: RandomAccessCollection {
     /// Ordena a coleção usando uma chave de comparação.
     ///
     /// - Complexity: O(*n* log *n*)

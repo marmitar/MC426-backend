@@ -33,15 +33,18 @@ final class ScrapedData: StorageKey {
         self.disciplines.get(code: code)
     }
 
-    /// Busca dentre os dados carregados na memória.
-    func search(for text: String, limitingTo limit: Int? = nil) -> [Discipline]  {
+    /// Busca textual dentre os dados carregados na memória.
+    ///
+    /// - Returns: Os `limit` melhores scores dentre todos os
+    ///   os conjuntos de dados, mas com score menor que
+    ///   `maxScore`.
+    func search(for text: String, limitingTo limit: Int, maxScore: Double) -> [Match]  {
         let (elapsed, matches) = withTiming {
-            self.disciplines.search(for: text, limit: limit)
+            self.disciplines.search(for: text, limitedTo: limit, upTo: maxScore)
         }
         self.logger.info("Searched for \"\(text)\" with \(matches.count) results in \(elapsed) secs.")
 
-        // TODO: outros tipos de dados
-        return matches.map { $0.item }
+        return matches
     }
 }
 

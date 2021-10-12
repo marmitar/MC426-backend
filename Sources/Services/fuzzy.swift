@@ -1,7 +1,8 @@
 import Foundation
 import Fuzz
 
-/// String preparada para comparação.
+/// String preparada para comparação
+/// e interoperabilidade com C.
 public struct QueryString {
     /// Conteúdo da string em forma de buffer para
     /// trabalhar com a API de C.

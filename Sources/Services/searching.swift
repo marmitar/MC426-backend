@@ -122,21 +122,28 @@ public struct Database<Item: Searchable> {
         }
     }
 
-    public func search(_ query: QueryString, limit: Int? = nil) -> ArraySlice<(item: Item, score: Double)> {
-        var scored = self.entries.map { (item, cache) in
-            (item: item, score: cache.fullScore(for: query))
-        }
-        scored.sort(on: { $0.score })
+    /// Busca textual no conjunto de dados.
+    ///
+    /// - Returns: Os dados com score menor que `maxScore`,
+    ///   e o seu score para a string de busca.
+    public func search(_ query: QueryString, upTo maxScore: Double) -> [(item: Item, score: Double)] {
+        return self.entries.compactMap { (item, cache) in
+            let score = cache.fullScore(for: query)
 
-        if let limit = limit {
-            return scored.prefix(limit)
-        } else {
-            return scored[...]
+            if score < maxScore {
+                return (item, score)
+            } else {
+                return nil
+            }
         }
     }
 
-    public func search(_ text: String, limit: Int? = nil) -> ArraySlice<(item: Item, score: Double)> {
-        self.search(QueryString(text), limit: limit)
+    /// Busca textual no conjunto de dados.
+    ///
+    /// - Returns: Os dados com score menor que `maxScore`,
+    ///   e o seu score para a string de busca.
+    public func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
+        self.search(QueryString(text), upTo: maxScore)
     }
 }
 

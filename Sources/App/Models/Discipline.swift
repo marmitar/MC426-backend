@@ -64,3 +64,19 @@ extension Discipline: Searchable {
         }
     }
 }
+
+extension Discipline: Reduceable {
+    typealias ReducedForm = ReducedDiscipline
+
+    /// Forma reduzida da disciplina, com
+    /// apenas nome e código.
+    struct ReducedDiscipline: Content {
+        let code: String
+        let name: String
+    }
+
+    @inlinable
+    func reduced() -> ReducedForm {
+        .init(code: self.code, name: self.name)
+    }
+}
