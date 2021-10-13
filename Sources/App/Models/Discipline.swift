@@ -43,7 +43,7 @@ extension Discipline: Searchable {
         case name
 
         @inlinable
-        func getter(_ item: Discipline) -> String {
+        func get(from item: Discipline) -> String {
             switch self {
                 case .code:
                     return item.code

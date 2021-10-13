@@ -38,7 +38,7 @@ public protocol SearchableProperty: CaseIterable, Equatable {
 
     /// Acesso da propriedade do dado.
     @inlinable
-    func getter(_ item: Of) -> String
+    func get(from item: Of) -> String
 
     /// Peso da propriedade (1.0, por padrão).
     ///
@@ -74,7 +74,7 @@ public struct Database<Item: Searchable> {
         }
         // ordena se requisitado
         if let field = Item.sortOn {
-            entries.sort { field.getter($0.item) }
+            entries.sort { field.get(from: $0.item) }
         }
         return entries
     }
@@ -115,10 +115,10 @@ public struct Database<Item: Searchable> {
         // busca binária no campo base da ordenação
         return self.entries.binarySearch(
             for: value,
-            on: { field.getter($0.item) }
+            on: { field.get(from: $0.item) }
         // tem que garantir que o resultado é exato
         ).flatMap { (match, _) in
-            if field.getter(match) == value {
+            if field.get(from: match) == value {
                 return match
             } else {
                 return nil
@@ -138,7 +138,7 @@ public struct Database<Item: Searchable> {
             case Self.sortedOn:
                 return self.findOnSorted(with: value)
             default:
-                return self.find { field.getter($0) == value }
+                return self.find { field.get(from: $0) == value }
         }
     }
 

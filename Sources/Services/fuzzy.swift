@@ -57,7 +57,7 @@ struct FuzzyCache {
     init<Item: Searchable>(for item: Item) {
         self.fields = Item.properties.map { field in
             return FuzzyField(
-                value: field.getter(item),
+                value: field.get(from: item),
                 weight: field.weight / Item.totalWeight
             )
         }
