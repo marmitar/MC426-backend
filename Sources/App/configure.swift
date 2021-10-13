@@ -2,6 +2,9 @@ import Foundation
 import Vapor
 import Services
 
+/// Future usada em Vapor e NIO.
+typealias Future<T> = EventLoopFuture<T>
+
 // configures your application
 public func configure(_ app: Application) throws {
     app.http.server.configuration.serverName = "Planejador de Disciplinas"
@@ -18,10 +21,15 @@ public func configure(_ app: Application) throws {
     try routes(app)
 }
 
-private extension Application {
-    /// Executa closure assincronamente, útil para configuração.
-    func asyncConfig<T>(run: @escaping () throws -> T) -> EventLoopFuture<T> {
-        self.threadPool.runIfActive(eventLoop: self.eventLoopGroup.next(), run)
+extension Application {
+    /// Executa closure assincronamente em `eventLoop`.
+    func async<T>(on eventLoop: EventLoop, run: @escaping () throws -> T) -> Future<T> {
+        self.threadPool.runIfActive(eventLoop: eventLoop, run)
+    }
+
+    /// Executa closure assincronamente.
+    func async<T>(run: @escaping () throws -> T) -> Future<T> {
+        self.async(on: self.eventLoopGroup.next(), run: run)
     }
 }
 
@@ -35,7 +43,7 @@ final class ScrapedData: StorageKey {
 
     fileprivate init(_ app: Application) throws {
         // inicia thread para preparar os dados
-        let disciplines = app.asyncConfig {
+        let disciplines = app.async {
             try Discipline.Controller(logger: app.logger)
         }
         // então monta o controlador global
