@@ -8,7 +8,7 @@ struct QueryString {
     /// trabalhar com a API de C.
     private let content: ContiguousArray<CChar>
     /// Tamanho do buffer, desconsiderando o byte null.
-    let length: Int
+    private let length: Int
 
     /// Prepara a string para comparação e para
     /// funcionar com a API de C.
@@ -103,7 +103,7 @@ private final class FuzzyField {
     }
 
     /// Menor valor que para usar o partial ratio.
-    static let minScore = 0.01
+    private static let minScore = 0.01
 
     /// Compara a string no cache com `text`.
     ///

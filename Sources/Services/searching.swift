@@ -101,7 +101,7 @@ public struct Database<Item: Searchable> {
     /// - Returns: Primeiro elemento que retorna
     ///  `true` para o predicado.
     private func find(where predicate: (Item) throws -> Bool) rethrows -> Item? {
-        try entries.first { try predicate($0.item) }?.item
+        try self.entries.first { try predicate($0.item) }?.item
     }
 
     /// Busca binária no conjunto de dados.
@@ -202,15 +202,15 @@ private struct NonPositiveWeightError: Error, LocalizedError {
     }
 
     var errorDescription: String? {
-        "Searchable type '\(type)' contains non-positive weights."
+        "Searchable type '\(self.type)' contains non-positive weights."
     }
 
     var failureReason: String? {
-        "Type '\(type)' with fields \(formattedFields) contains"
-        + " \(offendingFields.count) negative weights"
+        "Type '\(self.type)' with fields \(self.formattedFields) contains"
+        + " \(self.offendingFields.count) negative weights"
     }
 
     var recoverySuggestion: String? {
-        "Fix weight for fields: \(offendingFields.joined(separator: ", "))"
+        "Fix weight for fields: \(self.offendingFields.joined(separator: ", "))"
     }
 }

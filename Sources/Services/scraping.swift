@@ -46,7 +46,7 @@ private struct WebScrapingScript {
     /// Caminho para o script.
     let script: URL
     /// Pasta com os artefatos gerados pelo script.
-    let buildFolder: URL
+    private let buildFolder: URL
 
     /// Prepara os caminhos usados pelo script.
     ///
@@ -73,7 +73,7 @@ private struct WebScrapingScript {
     /// Remove diretório de saída do script (`buildFolder`), se existir.
     func clearDir() {
         do {
-            try FileManager.default.removeItem(at: buildFolder)
+            try FileManager.default.removeItem(at: self.buildFolder)
         } catch {
             // ignora erros durante remoção
         }
@@ -82,7 +82,7 @@ private struct WebScrapingScript {
     /// Cria diretório de saída do script (`buildFolder`).
     func createDir() throws {
         try FileManager.default.createDirectory(
-            at: buildFolder,
+            at: self.buildFolder,
             withIntermediateDirectories: true
         )
     }
@@ -90,24 +90,20 @@ private struct WebScrapingScript {
     /// Executa o script e gera os resultados no diretório de saída (`buildFolder`).
     func executeScript() throws {
         let exec = URL(fileURLWithPath: "/usr/bin/env")
-        let args = ["python3", script.path, buildFolder.path]
+        let args = ["python3", self.script.path, self.buildFolder.path]
 
         let task = try Process.run(exec, arguments: args)
-        task.waitUntilExit()
-
-        if task.terminationStatus != 0 {
-            throw WebScrapingError(
-                script: self,
-                exitCode: task.terminationStatus
-            )
+        // checa se houve algum erro
+        if let error = WebScrapingError(for: self, on: task) {
+            throw error
         }
     }
 
     /// Limpa o diretório de saída (`buildFolder`) e executa o script.
     func cleanExecution() throws {
-        clearDir()
-        try createDir()
-        try executeScript()
+        self.clearDir()
+        try self.createDir()
+        try self.executeScript()
     }
 
     /// Retorna se o diretório de saída (`buildFolder`) já existe.
@@ -115,7 +111,7 @@ private struct WebScrapingScript {
         var isDirectory = ObjCBool(false)
 
         let exists = FileManager.default.fileExists(
-            atPath: buildFolder.path,
+            atPath: self.buildFolder.path,
             isDirectory: &isDirectory
         )
         return exists && isDirectory.boolValue
@@ -124,7 +120,7 @@ private struct WebScrapingScript {
     /// Retorna todos os arquivos no diretório de saída (`buildFolder`).
     func allFiles() throws -> [URL] {
         try FileManager.default.contentsOfDirectory(
-            at: buildFolder,
+            at: self.buildFolder,
             includingPropertiesForKeys: [.isRegularFileKey]
         )
         .filter { url in
@@ -139,35 +135,61 @@ private struct WebScrapingScript {
     ///   com seu valor parseado.
     func parseFilesWith<T>(parser parse: (Data) throws -> T) throws -> [String: T] {
 
-        let parsed = try allFiles().concurrentMap { filename -> (String, T) in
+        let parsed = try self.allFiles().concurrentMap { filename -> (String, T) in
             let contents = try Data(contentsOf: filename)
             let name = filename.deletingPathExtension().lastPathComponent
 
             return (name, try parse(contents))
         }
-        return Dictionary(uniqueKeysWithValues: parsed)
+        return .init(uniqueKeysWithValues: parsed)
     }
 }
 
 /// Erro de execução de um script de Web Scraping.
 private struct WebScrapingError: Error, LocalizedError, RecoverableError {
     /// Script que estava sendo executado.
-    let script: WebScrapingScript
-    /// Código de retorno da execução.
-    let exitCode: Int32
+    private let script: WebScrapingScript
+    /// Tarefa que encerrou com falhas.
+    private let task: Process
+
+    /// Gera um erro para o `script` caso `task` falhe.
+    init?(for script: WebScrapingScript, on task: Process) {
+        task.waitUntilExit()
+        if task.terminationStatus == 0 {
+            return nil
+        }
+        // processo falhou
+        self.script = script
+        self.task = task
+    }
+
+    /// Código de falha retornado na execução.
+    var exitCode: Int32 {
+        self.task.terminationStatus
+    }
+
+    /// Descrição do método de encerramento do script.
+    var terminationReason: String {
+        switch self.task.terminationReason {
+            case .exit:
+                return "exited normally"
+            case .uncaughtSignal:
+                return "termined by an uncaught signal"
+        }
+    }
 
     /// Caminho do arquivo de script.
     var scriptPath: String {
-        script.script.path
+        self.script.script.path
     }
 
     var errorDescription: String? {
-        "Script '\(scriptPath)' exited with unexpected status code"
+        "Script '\(self.scriptPath)' ended with unexpected status code"
     }
 
     var failureReason: String? {
-        "Script '\(scriptPath)' exited with code \(exitCode)"
-        + " when running with WebScrapingScript"
+        "Script '\(self.scriptPath)' \(self.terminationReason) with "
+        + "code \(self.exitCode) when running in WebScrapingScript"
     }
 
     var recoverySuggestion: String? {
@@ -197,7 +219,7 @@ private struct WebScrapingError: Error, LocalizedError, RecoverableError {
     }
 
     /// Opções de recuperação  para a execução.
-    enum Options: String, CaseIterable {
+    private enum Options: String, CaseIterable {
         case simpleRerun = "Re-run script without any changes"
         case clearExec = "Clear directory and re-run script"
     }
