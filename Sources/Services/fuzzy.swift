@@ -123,7 +123,7 @@ private final class FuzzyField {
         let newScore = query.withUnsafePointer { ptr, len in
             fuzz_levenshtein(self.cached.buffer, self.cached.buflen, ptr, len)
         }
-        // garante o resultado no intervalo (0, minScore].
-        return Double.ulpOfOne + newScore * Self.minScore
+        // garante o resultado no intervalo (ulpOfOne, minScore + ulpOfOne].
+        return Double.ulpOfOne + Self.minScore * newScore.clamped(from: 0, upTo: 1.0)
     }
 }

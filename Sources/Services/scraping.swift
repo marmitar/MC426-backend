@@ -164,12 +164,12 @@ private struct WebScrapingError: Error, LocalizedError, RecoverableError {
     }
 
     /// Código de falha retornado na execução.
-    var exitCode: Int32 {
+    private var exitCode: Int32 {
         self.task.terminationStatus
     }
 
     /// Descrição do método de encerramento do script.
-    var terminationReason: String {
+    private var terminationReason: String {
         switch self.task.terminationReason {
             case .exit:
                 return "exited normally"
@@ -179,7 +179,7 @@ private struct WebScrapingError: Error, LocalizedError, RecoverableError {
     }
 
     /// Caminho do arquivo de script.
-    var scriptPath: String {
+    private var scriptPath: String {
         self.script.script.path
     }
 
