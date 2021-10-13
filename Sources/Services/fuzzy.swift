@@ -51,16 +51,15 @@ struct FuzzyCache {
     /// Campos no cache.
     private let fields: [FuzzyField]
 
-    /// Inicializa cache com lista de campos da
-    /// struct e função que extrai valor textual
-    /// e peso do campo.
-    ///
-    /// Peso já deve estar normalizado.
+    /// Inicializa cache com lista de campos da struct
+    /// extraindo o valor textual e o peso do campo.
     @inlinable
-    init<S: Sequence>(fields: S, getter: (S.Element) -> (value: String, weight: Double)) {
-        self.fields = fields.map { field in
-            let (value, weight) = getter(field)
-            return FuzzyField(value, weight)
+    init<Item: Searchable>(for item: Item) {
+        self.fields = Item.properties.map { field in
+            return FuzzyField(
+                value: field.getter(item),
+                weight: field.weight / Item.totalWeight
+            )
         }
     }
 
@@ -89,7 +88,7 @@ private final class FuzzyField {
     /// Constrói cache de `value` para comparação com outras
     /// strings e calcula a norma do campo.
     @inlinable
-    init(_ value: String, _ weight: Double) {
+    init(value: String, weight: Double) {
         let (text, _) = QueryString.prepareAndCountWords(value)
 
         self.weight = weight
@@ -116,7 +115,7 @@ private final class FuzzyField {
             fuzz_cached_ratio(self.cached, ptr, len)
         }
         // se o score for grande o bastante, então retorna ele
-        if scoreValue > Self.minScore {
+        if scoreValue > Self.minScore + Double.ulpOfOne {
             return scoreValue.clamped(upTo: 1.0)
         }
 
@@ -125,6 +124,6 @@ private final class FuzzyField {
             fuzz_levenshtein(self.cached.buffer, self.cached.buflen, ptr, len)
         }
         // garante o resultado no intervalo (0, minScore].
-        return (newScore * Self.minScore).clamped(from: Double.ulpOfOne, upTo: 1)
+        return Double.ulpOfOne + newScore * Self.minScore
     }
 }

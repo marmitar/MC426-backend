@@ -23,6 +23,12 @@ public extension Searchable {
     static var properties: Properties.AllCases {
         Properties.allCases
     }
+
+    /// Soma dos pesos para normalização.
+    @inlinable
+    static var totalWeight: Double {
+        self.properties.reduce(0) { $0 + $1.weight }
+    }
 }
 
 /// Enum das propriedades procuráveis de um dado.
@@ -38,9 +44,7 @@ public protocol SearchableProperty: CaseIterable, Equatable {
     ///
     /// Deve ser estritamente positivo.
     @inlinable
-    var weight: Double {
-        @inlinable get
-    }
+    var weight: Double { @inlinable get }
 }
 
 public extension SearchableProperty {
@@ -64,15 +68,9 @@ public struct Database<Item: Searchable> {
     ///
     /// `Item` não deve conter pesos negativos.
     private static func buildEntries(for data: [Item]) -> [Entry] {
-        // soma dos pesos para normalização
-        let totalWeight = Item.properties.reduce(0) { $0 + $1.weight }
-
         /// monta cache de cada dado
-        var entries = data.concurrentMap { item -> Entry in
-            let cache = FuzzyCache(fields: Item.properties) {
-                ($0.getter(item), $0.weight / totalWeight)
-            }
-            return (item, cache)
+        var entries = data.concurrentMap { item in
+            Entry(item, FuzzyCache(for: item))
         }
         // ordena se requisitado
         if let field = Item.sortOn {

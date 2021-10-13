@@ -67,7 +67,7 @@ extension ContentController {
         var results = self.search(for: text, upTo: maxScore)
         results.sort(on: { $0.score })
 
-        let contentName = Content.contentName;
+        let contentName = Content.contentName
         return results.prefix(matches).map {
             Match($0.item.reduced(), $0.score, contentName)
         }
