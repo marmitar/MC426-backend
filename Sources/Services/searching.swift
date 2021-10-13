@@ -98,10 +98,32 @@ public struct Database<Item: Searchable> {
 
     /// Busca linear no conjunto de dados.
     ///
-    /// - Returns: Primeiro elemento no conjunto de dados
-    ///   que retorna `true` para o predicado.
-    public func find(where predicate: (Item) throws -> Bool) rethrows -> Item? {
+    /// - Returns: Primeiro elemento que retorna
+    ///  `true` para o predicado.
+    private func find(where predicate: (Item) throws -> Bool) rethrows -> Item? {
         try entries.first { try predicate($0.item) }?.item
+    }
+
+    /// Busca binária no conjunto de dados.
+    ///
+    /// - Returns: Primeiro elemento com campo
+    ///   de ordenação igual a `value`.
+    private func findOnSorted(with value: String) -> Item? {
+        guard let field = Self.sortedOn else {
+            return nil
+        }
+        // busca binária no campo base da ordenação
+        return self.entries.binarySearch(
+            for: value,
+            on: { field.getter($0.item) }
+        // tem que garantir que o resultado é exato
+        ).flatMap { (match, _) in
+            if field.getter(match) == value {
+                return match
+            } else {
+                return nil
+            }
+        }
     }
 
     /// Busca por um dos campos do dado.
@@ -112,18 +134,11 @@ public struct Database<Item: Searchable> {
     /// Executa busca binário quando o campo é base de ordenação
     /// (`Searchable.sortOn`) e busca linear nos outros casos.
     public func find(_ field: Field, equals value: String) -> Item? {
-        if field == Self.sortedOn {
-            return entries.binarySearch(for: value) { field.getter($0.item) }
-                .flatMap { result in
-                    // garante que o elemento tem chave certa
-                    if field.getter(result.item) == value {
-                        return result.item
-                    } else {
-                        return nil
-                    }
-                }
-        } else {
-            return self.find { field.getter($0) == value }
+        switch field {
+            case Self.sortedOn:
+                return self.findOnSorted(with: value)
+            default:
+                return self.find { field.getter($0) == value }
         }
     }
 
@@ -131,7 +146,7 @@ public struct Database<Item: Searchable> {
     ///
     /// - Returns: Os dados com score menor que `maxScore`,
     ///   e o seu score para a string de busca.
-    public func search(_ query: QueryString, upTo maxScore: Double) -> [(item: Item, score: Double)] {
+    private func search(_ query: QueryString, upTo maxScore: Double) -> [(item: Item, score: Double)] {
         return self.entries.compactMap { (item, cache) in
             let score = cache.fullScore(for: query)
 

@@ -3,7 +3,7 @@ import Fuzz
 
 /// String preparada para comparação
 /// e interoperabilidade com C.
-public struct QueryString {
+struct QueryString {
     /// Conteúdo da string em forma de buffer para
     /// trabalhar com a API de C.
     private let content: ContiguousArray<CChar>
