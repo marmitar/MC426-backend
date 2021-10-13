@@ -175,6 +175,8 @@ private struct WebScrapingError: Error, LocalizedError, RecoverableError {
                 return "exited normally"
             case .uncaughtSignal:
                 return "termined by an uncaught signal"
+            @unknown default:
+                return "terminated by unknown reason"
         }
     }
 
