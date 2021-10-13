@@ -10,11 +10,16 @@ public func configure(_ app: Application) throws {
     app.http.server.configuration.serverName = "Planejador de Disciplinas"
     // serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
-    // envia scores quando em modo de desenvolvimento
-    if !app.environment.isRelease {
-        Match.encodeScoresForSending()
-    }
 
+    // quando em modo de desenvolvimento
+    if case .development = app.environment {
+        // envia scores nas matches da busca
+        Match.encodeScoresForSending()
+        // formata JSON com chaves ordenadas e identadas
+        let encoder = ContentConfiguration.global.jsonEncoder ?? .init()
+        encoder.outputFormatting.formUnion([.sortedKeys, .prettyPrinted])
+        ContentConfiguration.global.use(encoder: encoder, for: .json)
+    }
     // recupera dados por scraping
     app.storage[ScrapedData.self] = try .init(app)
     // register routes
@@ -30,6 +35,25 @@ extension Application {
     /// Executa closure assincronamente.
     func async<T>(run: @escaping () throws -> T) -> Future<T> {
         self.async(on: self.eventLoopGroup.next(), run: run)
+    }
+}
+
+extension ContentConfiguration {
+    /// Encoder de JSON na configuração atual.
+    var jsonEncoder: JSONEncoder? {
+        do {
+            return try self.requireEncoder(for: .json) as? JSONEncoder
+        } catch {
+            return nil
+        }
+    }
+}
+
+extension Request {
+    /// Dados recuperados por scraping.
+    var scrapedData: ScrapedData {
+        // SAFETY: sempre vai estar inicializado em Request
+        self.application.storage[ScrapedData.self]!
     }
 }
 
@@ -68,13 +92,5 @@ final class ScrapedData: StorageKey {
         self.logger.info("Searched for \"\(text)\" with \(matches.count) results in \(elapsed) secs.")
 
         return matches
-    }
-}
-
-extension Request {
-    /// Dados recuperados por scraping.
-    var scrapedData: ScrapedData {
-        // SAFETY: sempre vai estar inicializado em Request
-        self.application.storage[ScrapedData.self]!
     }
 }
