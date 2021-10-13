@@ -42,6 +42,7 @@ extension Discipline: Searchable {
         /// Busca pelo nome da disciplina.
         case name
 
+        @inlinable
         func getter(_ item: Discipline) -> String {
             switch self {
                 case .code:
@@ -51,12 +52,12 @@ extension Discipline: Searchable {
             }
         }
 
+        @inlinable
         var weight: Double {
             switch self {
                 // maior peso para o código, que é mais exato
                 case .code:
                     return 0.6
-                // mas o nome também é útil
                 case .name:
                     return 0.4
             }

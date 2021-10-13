@@ -21,6 +21,7 @@ protocol Matchable: Searchable {
 }
 
 extension Matchable {
+    @inlinable
     static var contentName: String {
         "\(Self.self)".lowercased()
     }

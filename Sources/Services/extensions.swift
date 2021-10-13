@@ -68,6 +68,8 @@ extension RandomAccessCollection {
             execute: (Element) throws -> Void,
             onError: (Error) throws -> Void
         ) rethrows {
+            /// precisa ser na mutex, para evitar data race
+            /// mas ela só é usada realmente em caso de erro
             var err = Mutex<Error?>(nil)
 
             DispatchQueue.concurrentPerform(iterations: self.count) { position in
@@ -82,27 +84,40 @@ extension RandomAccessCollection {
                     err.withLock { $0 = error }
                 }
             }
-
+            // os erros só são acusados no final, sem early return
             if let error = err.get() {
                 try onError(error)
             }
         }
     }
 
+    /// Versão concorrent de ``Array.reduce`` com acesso direto
+    /// para a `Mutex`.
+    ///
+    /// Não é seguro por conta do `Mutex.get`, que pode levar a
+    /// data races.
+    private func concurrentUnsafeReduce<Result>(
+        into initialResult: Result,
+        _ updateAccumulatingResult: (inout Mutex<Result>, Element) throws -> ()
+    ) rethrows -> Result {
+        /// mutex protege contra data races
+        var result = Mutex(initialResult)
+
+        try self.concurrentForEach { item in
+            try updateAccumulatingResult(&result, item)
+        }
+        return result.get()
+    }
+
     /// Versão concorrente do ``Array.map``.
     ///
     /// O resultado pode ter uma ordem diferente da esperada.
     func concurrentMap<T>(_ transform: (Element) throws -> T) rethrows -> [T] {
-        var transformed = Mutex<[T]>([])
-
-        try self.concurrentForEach { item in
+        try self.concurrentUnsafeReduce(into: []) { mutex, item in
             let newItem = try transform(item)
-
-            transformed.withLock {
-                $0.append(newItem)
-            }
+            // tranca apenas quando necessário
+            mutex.withLock { $0.append(newItem) }
         }
-        return transformed.get()
     }
 
     /// Versão concorrente do ``Array.flatMap``.
@@ -111,16 +126,11 @@ extension RandomAccessCollection {
     func concurrentFlatMap<Segment: Sequence>(
         _ transform: (Element) throws -> Segment
     ) rethrows -> [Segment.Element] {
-        var transformed = Mutex<[Segment.Element]>([])
-
-        try self.concurrentForEach { item in
-            let newSequence = try transform(item)
-
-            transformed.withLock {
-                $0.append(contentsOf: newSequence)
-            }
+        try self.concurrentUnsafeReduce(into: []) { mutex, item in
+            let newSegment = try transform(item)
+            // tranca apenas quando necessário
+            mutex.withLock { $0.append(contentsOf: newSegment) }
         }
-        return transformed.get()
     }
 
     /// Versão concorrente do ``Array.compactMap``.
@@ -129,16 +139,12 @@ extension RandomAccessCollection {
     func concurrentCompactMap<Result>(
         _ transform: (Element) throws -> Result?
     ) rethrows -> [Result] {
-        var transformed = Mutex<[Result]>([])
-
-        try self.concurrentForEach { item in
+        try self.concurrentUnsafeReduce(into: []) { mutex, item in
             if let newItem = try transform(item) {
-                transformed.withLock {
-                    $0.append(newItem)
-                }
+                // tranca apenas quando necessário
+                mutex.withLock { $0.append(newItem) }
             }
         }
-        return transformed.get()
     }
 }
 

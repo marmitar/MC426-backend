@@ -8,13 +8,18 @@ public protocol Searchable {
     /// Propriedade usada para ordenadação.
     ///
     /// O padrão é `nil`.
-    static var sortOn: Properties? { get }
+    @inlinable
+    static var sortOn: Properties? {
+        @inlinable get
+    }
 }
 
 public extension Searchable {
+    @inlinable
     static var sortOn: Properties? { nil }
 
     /// Coleção de propriedades do dado.
+    @inlinable
     static var properties: Properties.AllCases {
         Properties.allCases
     }
@@ -26,15 +31,20 @@ public protocol SearchableProperty: CaseIterable, Equatable {
     associatedtype Of: Searchable
 
     /// Acesso da propriedade do dado.
+    @inlinable
     func getter(_ item: Of) -> String
 
     /// Peso da propriedade (1.0, por padrão).
     ///
     /// Deve ser estritamente positivo.
-    var weight: Double { get }
+    @inlinable
+    var weight: Double {
+        @inlinable get
+    }
 }
 
 public extension SearchableProperty {
+    @inlinable
     var weight: Double { 1.0 }
 }
 
@@ -43,7 +53,7 @@ public struct Database<Item: Searchable> {
     /// Campos procuráveis do dado.
     public typealias Field = Item.Properties
     /// Campo de ordenação.
-    static var sortedOn: Field? { Item.sortOn }
+    private static var sortedOn: Field? { Item.sortOn }
     /// Par struct e sua cache de fuzzy matching.
     private typealias Entry = (item: Item, cache: FuzzyCache)
 
@@ -115,9 +125,7 @@ public struct Database<Item: Searchable> {
                     }
                 }
         } else {
-            return entries.first { (item, _) in
-                field.getter(item) == value
-            }?.item
+            return self.find { field.getter($0) == value }
         }
     }
 
