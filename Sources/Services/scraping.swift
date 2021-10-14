@@ -137,8 +137,9 @@ private struct WebScrapingScript {
         let task = try Process.run(exec, arguments: args)
         task.qualityOfService = .userInitiated
         // checa se houve algum erro
-        if let error = WebScrapingError(for: self, on: task) {
-            throw error
+        task.waitUntilExit()
+        guard task.terminationStatus == 0 else {
+            throw WebScrapingError(for: self, on: task)
         }
     }
 
@@ -196,14 +197,9 @@ private struct WebScrapingError: Error, LocalizedError, RecoverableError {
     private let task: Process
 
     /// Gera um erro para o `script` caso `task` falhe.
-    init?(for script: WebScrapingScript, on task: Process) {
-        task.waitUntilExit()
+    init(for script: WebScrapingScript, on task: Process) {
         self.script = script
         self.task = task
-        /// proceso deve ser encerrado com erro
-        guard self.exitCode != 0 else {
-            return nil
-        }
     }
 
     /// Código de falha retornado na execução.
