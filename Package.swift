@@ -1,4 +1,4 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.5
 import PackageDescription
 
 private let swiftSettings = [
@@ -12,7 +12,7 @@ private let swiftSettings = [
 let package = Package(
     name: "BackendProject",
     platforms: [
-       .macOS(.v10_15)
+       .macOS(.v11)
     ],
     dependencies: [
         // biblioteca para Logging, usada pelo Vapor
