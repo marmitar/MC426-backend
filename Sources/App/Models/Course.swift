@@ -17,17 +17,7 @@ struct Course: Content {
     /// Representa as modalidades ou a árvore do curso.
     enum CourseContent: Codable {
         case variants([Variant])
-        case tree([[String]])
-
-        // TODO: fazer isso só que sem ser redundante
-        func encode(to encoder: Encoder) throws {
-            switch self {
-            case .tree(let tree):
-                try tree.encode(to: encoder)
-            case .variants(let variants):
-                try variants.encode(to: encoder)
-            }
-        }
+        case tree(CourseTree)
     }
 }
 
@@ -39,6 +29,45 @@ struct Variant: Content {
     let tree: CourseTree
 }
 
+extension Course: WebScrapable {
+    static let scriptName = "courses.py"
+}
+
+extension Course: Searchable {
+    /// Ordena por nome, para buscar mais rápido.
+    static let sortOn: Properties? = .code
+
+    /// Propriedades buscáveis no curso.
+    enum Properties: SearchableProperty {
+        /// Busca por código.
+        case code
+        /// Busca por nome.
+        case name
+
+        @inlinable
+        func get(from item: Course) -> String {
+            switch self {
+            case .code:
+                return item.code
+            case .name:
+                return item.name
+            }
+        }
+    }
+}
+
+extension Course: Matchable {
+    /// Forma reduzida, com código e nome.
+    struct ReducedForm: Encodable {
+        let code: String
+        let name: String
+    }
+
+    @inlinable
+    func reduced() -> ReducedForm {
+        .init(code: self.code, name: self.name)
+    }
+}
 extension Course: Decodable {
     /// Checa se existem modalidades e árvore de curso e retorna o conteúdo correspondente.
     /// No caso de haver nenhum ou ambos, lança o erro correspondente.
