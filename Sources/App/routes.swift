@@ -1,3 +1,4 @@
+import Foundation
 import Vapor
 
 func routes(_ app: Application) throws {
@@ -30,6 +31,18 @@ func routes(_ app: Application) throws {
         let code = req.parameters.get("code")!
 
         guard let result = req.scrapedData.getDiscipline(with: code) else {
+            // retorna 404 NOT FOUND
+            throw Abort(.notFound)
+        }
+        return result
+    }
+
+    // API: dados para a página de um curso
+    api.get("curso", ":code") { req -> Course in
+        // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
+        let code = req.parameters.get("code")!
+
+        guard let result = req.scrapedData.getCourse(with: code) else {
             // retorna 404 NOT FOUND
             throw Abort(.notFound)
         }

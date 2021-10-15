@@ -64,20 +64,31 @@ final class ScrapedData: StorageKey {
     private let logger: Logger
     /// Controlador de disciplinas.
     private let disciplines: Discipline.Controller
+    /// Controlador de cursos.
+    private let courses: Course.Controller
 
     fileprivate init(_ app: Application) throws {
         // inicia thread para preparar os dados
         let disciplines = app.async {
             try Discipline.Controller(logger: app.logger)
         }
+        let courses = app.async {
+            try Course.Controller(logger: app.logger)
+        }
         // então monta o controlador global
         self.logger = app.logger
         self.disciplines = try disciplines.wait()
+        self.courses = try courses.wait()
     }
 
     /// Recupera uma disciplina pelo seu código.
     func getDiscipline(with code: String) -> Discipline? {
         self.disciplines.get(code: code)
+    }
+
+    /// Recupera um curso pelo seu código.
+    func getCourse(with code: String) -> Course? {
+        self.courses.get(code: code)
     }
 
     /// Busca textual dentre os dados carregados na memória.
