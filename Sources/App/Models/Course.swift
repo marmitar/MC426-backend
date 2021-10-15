@@ -31,6 +31,7 @@ struct Variant: Content {
 
 extension Course: WebScrapable {
     static let scriptName = "courses.py"
+    typealias Output = Self
 }
 
 extension Course: Searchable {
@@ -68,6 +69,7 @@ extension Course: Matchable {
         .init(code: self.code, name: self.name)
     }
 }
+
 extension Course: Decodable {
     /// Checa se existem modalidades e árvore de curso e retorna o conteúdo correspondente.
     /// No caso de haver nenhum ou ambos, lança o erro correspondente.

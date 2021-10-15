@@ -3,8 +3,11 @@ import Logging
 
 /// Algum dado que é recuperado por um dos
 /// scipts de Web Scraping.
-public protocol WebScrapable: Decodable {
+public protocol WebScrapable {
+    /// Nome do script de scrape.
     static var scriptName: String { get }
+    /// Tipo de retorno do scrape.
+    associatedtype Output: Decodable
 }
 
 public extension WebScrapable {
@@ -14,7 +17,7 @@ public extension WebScrapable {
     ///
     /// - Returns: Dicionário com o nome de cada arquivo construído
     ///   e seus resultados parseados.
-    static func scrape(logger: Logger) throws -> [String: [Self]] {
+    static func scrape(logger: Logger) throws -> [String: Output] {
 
         logger.info("Scraping with \(self.scriptName)...")
         let script = WebScrapingScript(filename: self.scriptName)
@@ -59,7 +62,7 @@ public extension WebScrapable {
         _ script: WebScrapingScript,
         with logger: Logger,
         rebuild: Bool = false
-    ) throws -> [String: [Self]] {
+    ) throws -> [String: Output] {
         // executa apenas se requisitado ou se necessário
         if rebuild || !script.buildFolderExists {
 
@@ -73,10 +76,15 @@ public extension WebScrapable {
         // parseia o resultado da execução atual ou do cache
         let (elapsed, parsed) = try withTiming {
             try script.parseFiles { data in
-                try JSONDecoder().decode([Self].self, from: data)
+                try JSONDecoder().decode(Output.self, from: data)
             }
         }
-        let totalParsed = parsed.values.reduce(0) { $0 + $1.count }
+
+        let totalParsed = parsed.values.reduce(0) { currentCount, parsedItem in
+            let collection = parsedItem as? [Any]
+            return currentCount + (collection?.count ?? 1)
+        }
+
         logger.info("Decoded \(self.scriptName) with \(totalParsed) items in \(elapsed) secs.")
         return parsed
     }
