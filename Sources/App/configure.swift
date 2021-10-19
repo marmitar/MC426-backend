@@ -97,11 +97,20 @@ final class ScrapedData: StorageKey {
     ///   os conjuntos de dados, mas com score menor que
     ///   `maxScore`.
     func search(for text: String, limitingTo limit: Int, maxScore: Double) -> [Match]  {
-        let (elapsed, matches) = withTiming {
-            self.disciplines.search(for: text, limitedTo: limit, upTo: maxScore)
+        let (elapsed, matches) = withTiming { () -> [Match] in
+            let disciplinesResult = self.disciplines.search(for: text, limitedTo: limit, upTo: maxScore)
+            let coursesResult = self.courses.search(for: text, limitedTo: limit, upTo: maxScore)
+            return mergeAndSortSearchResults(results: [disciplinesResult, coursesResult], limitingTo: limit)
         }
         self.logger.info("Searched for \"\(text)\" with \(matches.count) results in \(elapsed) secs.")
 
         return matches
+    }
+
+    /// Junta vários resultados de busca em um só array.
+    private func mergeAndSortSearchResults(results: [[Match]], limitingTo limit: Int) -> [Match] {
+        var allResults = results.flatMap { $0 }
+        allResults.sort { $0.score }
+        return Array(allResults.prefix(limit))
     }
 }
