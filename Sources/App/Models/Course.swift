@@ -15,9 +15,21 @@ struct Course: Content {
     let content: CourseContent
 
     /// Representa as modalidades ou a árvore do curso.
-    enum CourseContent: Codable {
+    enum CourseContent {
+        /// Caso em que há modalidades.
         case variants([Variant])
+        /// Caso em que não há modalidades.
         case tree(CourseTree)
+
+        /// Retorna o nome das modalidades, se houver.
+        func getVariantNames() -> [String]? {
+            switch self {
+            case .variants(let variants):
+                return variants.map { $0.name }
+            case .tree:
+                return nil
+            }
+        }
     }
 }
 
@@ -87,7 +99,7 @@ extension Course: Decodable {
     }
 
     /// Chaves para ler o json criado por scrape.
-    private enum Keys: String, CodingKey {
+    private enum DecodingKeys: String, CodingKey {
         case code
         case name
         case variant
@@ -96,7 +108,7 @@ extension Course: Decodable {
 
     /// Monta um curso a partir do json de scrape.
     init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: Keys.self)
+        let values = try decoder.container(keyedBy: DecodingKeys.self)
 
         // Pega o código e nome do curso.
         code = try values.decode(String.self, forKey: .code)
@@ -107,7 +119,30 @@ extension Course: Decodable {
         let tree = try? values.decode(CourseTree.self, forKey: .tree)
         content = try Self.checkVariantsAndTree(variants: variants, tree: tree)
     }
+}
 
+extension Course: Encodable {
+
+    /// Chaves para escrever o json enviado pela API.
+    private enum EncodingKeys: String, CodingKey {
+        case code
+        case name
+        case variant
+    }
+
+    /// Encoda um curso com código, nome e nome das modalidades, se houver.
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: EncodingKeys.self)
+
+        // Salva código e nome.
+        try container.encode(code, forKey: .code)
+        try container.encode(name, forKey: .name)
+
+        // Salva nome das modalidades, se houver.
+        if let variantNames = content.getVariantNames() {
+            try container.encode(variantNames, forKey: .variant)
+        }
+    }
 }
 
 /// Representa os erros de conteúdo de um curso.
