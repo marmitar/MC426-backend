@@ -20,15 +20,36 @@ struct Course: Content {
         case variants([Variant])
         /// Caso em que não há modalidades.
         case tree(CourseTree)
+    }
 
-        /// Retorna o nome das modalidades, se houver.
-        func getVariantNames() -> [String]? {
-            switch self {
-            case .variants(let variants):
-                return variants.map { $0.name }
-            case .tree:
+    /// Retorna o nome das modalidades, se houver.
+    func getVariantNames() -> [String]? {
+        switch content {
+        case .variants(let variants):
+            return variants.map { $0.name }
+        case .tree:
+            return nil
+        }
+    }
+
+    /// Retorna uma árvore de curso.
+    ///
+    /// No caso sem modalidades, retorna a árvore se `index == 0`.
+    ///
+    /// No caso com modalidades, retorna a árvore da modalidade
+    /// na posição `index`.
+    func getTree(forIndex index: Int) -> CourseTree? {
+        switch content {
+        case .tree(let tree):
+            guard index == 0 else {
                 return nil
             }
+            return tree
+        case .variants(let variants):
+            guard let variant = variants.get(at: index) else {
+                return nil
+            }
+            return variant.tree
         }
     }
 }
@@ -139,7 +160,7 @@ extension Course: Encodable {
         try container.encode(name, forKey: .name)
 
         // Salva nome das modalidades, se houver.
-        if let variantNames = content.getVariantNames() {
+        if let variantNames = getVariantNames() {
             try container.encode(variantNames, forKey: .variant)
         }
     }
