@@ -6,7 +6,7 @@ extension Discipline {
     /// Controlador das disciplinas recuperadas por Scraping.
     ///
     /// Classe singleton. Usar `.shared` para pegar instância.
-    class Controller: ContentController {
+    final class Controller: ContentController {
         typealias Content = Discipline
 
         private let db: Database<Discipline>
@@ -15,7 +15,7 @@ extension Discipline {
         ///
         /// Por ser estática, é lazy por padrão, ou seja,
         /// o database será criado apenas na primeira chamada.
-        static var shared: Discipline.Controller = {
+        static let shared: Discipline.Controller = {
             let logger = Logger(label: "Discipline Controller Logger")
             return try! .init(logger: logger)
         }()
