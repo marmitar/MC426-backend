@@ -16,8 +16,7 @@ extension Discipline {
         /// Por ser estática, é lazy por padrão, ou seja,
         /// o database será criado apenas na primeira chamada.
         static let shared: Discipline.Controller = {
-            let logger = Logger.controllerLogger
-            return try! .init(logger: logger)
+            try! .init(logger: .controllerLogger)
         }()
 
         /// Inicializador privado do singleton.
