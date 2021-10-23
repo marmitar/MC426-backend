@@ -70,10 +70,10 @@ final class ScrapedData: StorageKey {
     fileprivate init(_ app: Application) throws {
         // inicia thread para preparar os dados
         let disciplines = app.async {
-            try Discipline.Controller(logger: app.logger)
+            Discipline.Controller.shared
         }
         let courses = app.async {
-            try Course.Controller(logger: app.logger)
+            Course.Controller.shared
         }
         // então monta o controlador global
         self.logger = app.logger
