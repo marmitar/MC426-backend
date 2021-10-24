@@ -15,9 +15,7 @@ extension Course {
         ///
         /// Por ser estática, é lazy por padrão, ou seja,
         /// o database será criado apenas na primeira chamada.
-        static let shared: Course.Controller = {
-            try! .init(logger: .controllerLogger)
-        }()
+        static let shared = try! Controller(logger: .controllerLogger)
 
         /// Inicializador privado do singleton.
         private init(logger: Logger) throws {
