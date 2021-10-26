@@ -44,16 +44,16 @@ struct QueryString {
 /// usados para comparação com uma string de
 /// busca usando fuzzy matching.
 struct FuzzyCache {
-    /// Campos no cache.
-    private let fields: [FuzzyField]
+    /// Campos no cache, com seu peso associado, para combinação de scores.
+    private let fields: [(textValue: FuzzyField, weight: Double)]
 
     /// Inicializa cache com lista de campos da struct
     /// extraindo o valor textual e o peso do campo.
     @inlinable
     init<Item: Searchable>(for item: Item) {
         self.fields = Item.properties.map { field in
-            return FuzzyField(
-                value: field.get(from: item),
+            return (
+                textValue: FuzzyField(value: field.get(from: item)),
                 weight: field.weight / Item.totalWeight
             )
         }
@@ -67,7 +67,7 @@ struct FuzzyCache {
     func fullScore(for query: QueryString) -> Double {
         // de https://github.com/krisk/Fuse/blob/master/src/core/computeScore.js
         return self.fields.reduce(1.0) { (totalScore, field) in
-            let score = field.score(for: query)
+            let score = field.textValue.score(for: query)
             return totalScore * pow(score, field.weight)
         }
     }
@@ -78,16 +78,13 @@ struct FuzzyCache {
 private final class FuzzyField {
     /// Struct em C++ (com interface em C).
     private var cached: FuzzCachedRatio
-    /// Peso associado ao campo, para combinação de scores.
-    let weight: Double
 
     /// Constrói cache de `value` para comparação com outras
     /// strings e calcula a norma do campo.
     @inlinable
-    init(value: String, weight: Double) {
+    init(value: String) {
         let text = QueryString.normalizeQueryText(value)
 
-        self.weight = weight
         // constroi com a API de C++
         self.cached = text.withCString { fuzz_cached_init($0) }
     }
