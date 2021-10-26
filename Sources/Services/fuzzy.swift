@@ -93,7 +93,6 @@ final class FuzzyField: ScoreProvider {
         self.cached = text.withUnsafePointer { pointer, _ in
             fuzz_cached_init(pointer)
         }
-
     }
 
     /// Precisa desalocar a memória em C++.
