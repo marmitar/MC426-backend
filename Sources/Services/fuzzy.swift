@@ -18,7 +18,7 @@ struct QueryString {
     /// (removendo acentos e padronizando caracteres
     /// unicode).
     init(_ from: String) {
-        let text = Self.normalizeQueryText(from)
+        let text = from.normalized().splitWords().joined(separator: " ")
 
         self.content = ContiguousArray(text.utf8CString)
         self.length = self.content.withUnsafeBufferPointer {
@@ -28,15 +28,10 @@ struct QueryString {
 
     /// Acessa o pointeiro e o tamanho da string,
     /// para trabalhar com C.
-    fileprivate func withUnsafePointer<R>(_ body: (UnsafePointer<CChar>, Int) throws -> R) rethrows -> R {
+    func withUnsafePointer<R>(_ body: (UnsafePointer<CChar>, Int) throws -> R) rethrows -> R {
         try self.content.withUnsafeBufferPointer {
             try body($0.baseAddress!, self.length)
         }
-    }
-
-    /// Faz a normalização descrita em `init`.
-    fileprivate static func normalizeQueryText(_ string: String) -> String {
-        return string.normalized().splitWords().joined(separator: " ")
     }
 }
 
@@ -83,10 +78,13 @@ private final class FuzzyField {
     /// strings e calcula a norma do campo.
     @inlinable
     init(value: String) {
-        let text = QueryString.normalizeQueryText(value)
+        let text = QueryString(value)
 
         // constroi com a API de C++
-        self.cached = text.withCString { fuzz_cached_init($0) }
+        self.cached = text.withUnsafePointer { pointer, _ in
+            fuzz_cached_init(pointer)
+        }
+
     }
 
     /// Precisa desalocar a memória em C++.
