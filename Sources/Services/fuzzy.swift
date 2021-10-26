@@ -38,9 +38,9 @@ struct QueryString {
 /// Cache dos campos de uma estrutura ou classe
 /// usados para comparação com uma string de
 /// busca usando fuzzy matching.
-struct FuzzyCache {
+struct FuzzyCache<T: ScoreProvider> {
     /// Campos no cache, com seu peso associado, para combinação de scores.
-    private let fields: [(textValue: FuzzyField, weight: Double)]
+    private let fields: [(textValue: T, weight: Double)]
 
     /// Inicializa cache com lista de campos da struct
     /// extraindo o valor textual e o peso do campo.
@@ -48,7 +48,7 @@ struct FuzzyCache {
     init<Item: Searchable>(for item: Item) {
         self.fields = Item.properties.map { field in
             return (
-                textValue: FuzzyField(value: field.get(from: item)),
+                textValue: T(value: field.get(from: item)),
                 weight: field.weight / Item.totalWeight
             )
         }
@@ -68,9 +68,18 @@ struct FuzzyCache {
     }
 }
 
+/// Um provedor de score, inicializado com uma string
+/// para comparar com outras quando necessário.
+protocol ScoreProvider {
+    /// Constrói a partir da string a ser avaliada.
+    init(value: String)
+    /// Calcula o score para uma comparação.
+    func score(for query: QueryString) -> Double
+}
+
 /// Wrapper para fazzy matching de strings usando a biblioteca
 /// [RapidFuzz](https://github.com/maxbachmann/rapidfuzz-cpp).
-private final class FuzzyField {
+final class FuzzyField: ScoreProvider {
     /// Struct em C++ (com interface em C).
     private var cached: FuzzCachedRatio
 
