@@ -38,17 +38,17 @@ struct QueryString {
 /// Cache dos campos de uma estrutura ou classe
 /// usados para comparação com uma string de
 /// busca usando fuzzy matching.
-struct FuzzyCache<T: ScoreProvider> {
+struct FuzzyCache<Provider: ScoreProvider> {
     /// Campos no cache, com seu peso associado, para combinação de scores.
-    private let fields: [(textValue: T, weight: Double)]
+    private let fields: [(textValue: Provider, weight: Double)]
 
     /// Inicializa cache com lista de campos da struct
     /// extraindo o valor textual e o peso do campo.
     @inlinable
     init<Item: Searchable>(for item: Item) {
         self.fields = Item.properties.map { field in
-            return (
-                textValue: T(value: field.get(from: item)),
+            (
+                textValue: Provider(value: field.get(from: item)),
                 weight: field.weight / Item.totalWeight
             )
         }
