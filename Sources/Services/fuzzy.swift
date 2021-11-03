@@ -37,8 +37,8 @@ struct QueryString {
 
 /// Cache dos campos de uma estrutura ou classe
 /// usados para comparação com uma string de
-/// busca usando fuzzy matching.
-struct FuzzyCache<Provider: ScoreProvider> {
+/// busca usando um provedor de score qualquer.
+struct SearchCache<Provider: ScoreProvider> {
     /// Campos no cache, com seu peso associado, para combinação de scores.
     private let fields: [(textValue: Provider, weight: Double)]
 
@@ -59,10 +59,10 @@ struct FuzzyCache<Provider: ScoreProvider> {
     /// - Returns: Score entre da struct que varia entre
     ///   0 (match perfeito) e 1 (completamente diferentes).
     @inlinable
-    func fullScore(for query: QueryString) -> Double {
+    func fullScore(for text: String) -> Double {
         // de https://github.com/krisk/Fuse/blob/master/src/core/computeScore.js
         return self.fields.reduce(1.0) { (totalScore, field) in
-            let score = field.textValue.score(for: query)
+            let score = field.textValue.score(for: text)
             return totalScore * pow(score, field.weight)
         }
     }
@@ -74,7 +74,7 @@ protocol ScoreProvider {
     /// Constrói a partir da string a ser avaliada.
     init(value: String)
     /// Calcula o score para uma comparação.
-    func score(for query: QueryString) -> Double
+    func score(for query: String) -> Double
 }
 
 /// Wrapper para fazzy matching de strings usando a biblioteca
@@ -109,7 +109,8 @@ final class FuzzyField: ScoreProvider {
     /// - Returns: Score entre as strings que varia entre
     ///   0 (match perfeito) e 1 (completamente diferentes).
     @inlinable
-    func score(for query: QueryString) -> Double {
+    func score(for text: String) -> Double {
+        let query = QueryString(text)
         let scoreValue = query.withUnsafePointer { ptr, len in
             fuzz_cached_ratio(self.cached, ptr, len)
         }

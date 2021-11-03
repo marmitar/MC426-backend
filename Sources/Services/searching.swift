@@ -59,7 +59,7 @@ public struct Database<Item: Searchable> {
     /// Campo de ordenação.
     private static var sortedOn: Field? { Item.sortOn }
     /// Par struct e sua cache de fuzzy matching.
-    private typealias Entry = (item: Item, cache: FuzzyCache<FuzzyField>)
+    private typealias Entry = (item: Item, cache: SearchCache<FuzzyField>)
 
     /// Conjunto de dados.
     private let entries: [Entry]
@@ -70,7 +70,7 @@ public struct Database<Item: Searchable> {
     private static func buildEntries(for data: [Item]) -> [Entry] {
         /// monta cache de cada dado
         var entries = data.concurrentMap { item in
-            Entry(item, FuzzyCache<FuzzyField>(for: item))
+            Entry(item, SearchCache<FuzzyField>(for: item))
         }
         // ordena se requisitado
         if let field = Item.sortOn {
@@ -146,9 +146,9 @@ public struct Database<Item: Searchable> {
     ///
     /// - Returns: Os dados com score menor que `maxScore`,
     ///   e o seu score para a string de busca.
-    private func search(_ query: QueryString, upTo maxScore: Double) -> [(item: Item, score: Double)] {
+    public func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
         return self.entries.compactMap { (item, cache) in
-            let score = cache.fullScore(for: query)
+            let score = cache.fullScore(for: text)
 
             if score < maxScore {
                 return (item, score)
@@ -156,14 +156,6 @@ public struct Database<Item: Searchable> {
                 return nil
             }
         }
-    }
-
-    /// Busca textual no conjunto de dados.
-    ///
-    /// - Returns: Os dados com score menor que `maxScore`,
-    ///   e o seu score para a string de busca.
-    public func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
-        self.search(QueryString(text), upTo: maxScore)
     }
 }
 
