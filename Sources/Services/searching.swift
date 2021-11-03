@@ -159,6 +159,48 @@ public struct Database<Item: Searchable> {
     }
 }
 
+/// Cache dos campos de uma estrutura ou classe
+/// usados para comparação com uma string de
+/// busca usando um provedor de score qualquer.
+struct SearchCache<Provider: ScoreProvider> {
+    /// Campos no cache, com seu peso associado, para combinação de scores.
+    private let fields: [(textValue: Provider, weight: Double)]
+
+    /// Inicializa cache com lista de campos da struct
+    /// extraindo o valor textual e o peso do campo.
+    @inlinable
+    init<Item: Searchable>(for item: Item) {
+        self.fields = Item.properties.map { field in
+            (
+                textValue: Provider(value: field.get(from: item)),
+                weight: field.weight / Item.totalWeight
+            )
+        }
+    }
+
+    /// Score combinado dos campos da struct para a string de busca.
+    ///
+    /// - Returns: Score entre da struct que varia entre
+    ///   0 (match perfeito) e 1 (completamente diferentes).
+    @inlinable
+    func fullScore(for text: String) -> Double {
+        // de https://github.com/krisk/Fuse/blob/master/src/core/computeScore.js
+        return self.fields.reduce(1.0) { (totalScore, field) in
+            let score = field.textValue.score(for: text)
+            return totalScore * pow(score, field.weight)
+        }
+    }
+}
+
+/// Um provedor de score, inicializado com uma string
+/// para comparar com outras quando necessário.
+protocol ScoreProvider {
+    /// Constrói a partir da string a ser avaliada.
+    init(value: String)
+    /// Calcula o score para uma comparação.
+    func score(for query: String) -> Double
+}
+
 /// Erro para tipos `Searchable` mas com peso negativo ou zero.
 private struct NonPositiveWeightError: Error, LocalizedError {
     /// Todas as propriedades do tipo defeituoso.
