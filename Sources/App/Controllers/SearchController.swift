@@ -9,16 +9,14 @@ import Foundation
 import Vapor
 import Services
 
-public class SearchController{
+internal final class SearchController {
     
     /// Logger da aplicação, para reutilizar depois.
-    private let logger: Logger
-    static let shared = SearchController(logger: .controllerLogger)
-    
-    private init(logger: Logger) {
-        self.logger = logger
-    }
-        
+    private let logger: Logger = .controllerLogger
+    static let shared = SearchController()
+
+    private init() { }
+
     /// Parâmetros de busca textual.
     struct SearchParams: Content {
         let query: String
@@ -33,8 +31,8 @@ public class SearchController{
         return req.application.async(on: req.eventLoop) {
             self.search(
                 for: params.query,
-                   limitingTo: params.limit ?? 100,
-                   maxScore: 0.99
+                limitingTo: params.limit ?? 100,
+                maxScore: 0.99
             )
         }
     }
@@ -44,7 +42,7 @@ public class SearchController{
     /// - Returns: Os `limit` melhores scores dentre todos os
     ///   os conjuntos de dados, mas com score menor que
     ///   `maxScore`.
-    private func search(for text: String, limitingTo limit: Int, maxScore: Double) -> [Match]  {
+    private func search(for text: String, limitingTo limit: Int, maxScore: Double) -> [Match] {
         let (elapsed, matches) = withTiming { () -> [Match] in
             let disciplinesResult = Discipline.Controller.shared.search(for: text, limitedTo: limit, upTo: maxScore)
             let coursesResult = Course.Controller.shared.search(for: text, limitedTo: limit, upTo: maxScore)

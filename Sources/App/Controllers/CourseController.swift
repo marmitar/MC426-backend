@@ -33,11 +33,11 @@ extension Course {
             self.db.search(text, upTo: maxScore)
         }
         
-        func fetchCourse(_ req: Request) throws -> Course  {
+        func fetchCourse(_ req: Request) throws -> Course {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let code = req.parameters.get("code")!
             
-            if let course = self.findCourseWith(code: code){
+            if let course = self.findCourseWith(code: code) {
                 return course
                 
             } else {
