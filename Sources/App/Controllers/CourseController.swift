@@ -9,7 +9,7 @@ extension Course {
     final class Controller: ContentController {
         typealias Content = Course
 
-        private let db: Database<Course>
+        public let db: Database<Course>
 
         /// Instância compartilhada do singleton.
         ///
@@ -24,9 +24,9 @@ extension Course {
         }
 
         /// Recupera curso por código.
-        func get(code: String) -> Course? {
-            self.db.find(.code, equals: code)
-        }
+//        func get(code: String) -> Course? {
+//            self.db.find(.code, equals: code)
+//        }
 
         /// Busca apenas entre os cursos.
         func search(for text: String, upTo maxScore: Double) -> [(item: Course, score: Double)] {

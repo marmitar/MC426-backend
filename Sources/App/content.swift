@@ -72,6 +72,16 @@ extension ContentController {
             Match($0.item.reduced(), $0.score, contentName)
         }
     }
+    
+    /// Recupera curso por código.
+    func get<T>(code: String) -> T{
+        if self is Discipline.Controller {
+            return Discipline.Controller.shared.self.db.find(.code, equals: code) as! T
+        }
+        else {
+            return Course.Controller.shared.self.db.find(.code, equals: code) as! T
+        }
+    }
 }
 
 extension Logger {

@@ -9,7 +9,7 @@ extension Discipline {
     final class Controller: ContentController {
         typealias Content = Discipline
 
-        private let db: Database<Discipline>
+        public let db: Database<Discipline>
 
         /// Instância compartilhada do singleton.
         ///
@@ -24,9 +24,9 @@ extension Discipline {
         }
 
         /// Recupera disciplina por código.
-        func get(code: String) -> Discipline? {
-            self.db.find(.code, equals: code)
-        }
+//        func get(code: String) -> Discipline? {
+//            self.db.find(.code, equals: code)
+//        }
 
         /// Busca apenas entre as disciplinas.
         func search(for text: String, upTo maxScore: Double) -> [(item: Discipline, score: Double)] {
