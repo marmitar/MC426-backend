@@ -147,8 +147,10 @@ public struct Database<Item: Searchable> {
     /// - Returns: Os dados com score menor que `maxScore`,
     ///   e o seu score para a string de busca.
     public func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
+        // Prepara o texto que será buscado.
+        let searchText = text.prepareForSearch()
         return self.entries.compactMap { (item, cache) in
-            let score = cache.fullScore(for: text)
+            let score = cache.fullScore(for: searchText)
 
             if score < maxScore {
                 return (item, score)
@@ -171,8 +173,10 @@ struct SearchCache<Provider: ScoreProvider> {
     @inlinable
     init<Item: Searchable>(for item: Item) {
         self.fields = Item.properties.map { field in
-            (
-                textValue: Provider(value: field.get(from: item)),
+            // Cria o provedor de score, preparando a string.
+            let fieldScoreProvider = Provider(value: field.get(from: item).prepareForSearch())
+            return (
+                textValue: fieldScoreProvider,
                 weight: field.weight / Item.totalWeight
             )
         }
