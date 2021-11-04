@@ -38,7 +38,7 @@ extension Discipline {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let code = req.parameters.get("code")!
             
-            if let discipline = self.findDisciplineWith(code: code){
+            if let discipline = self.get(code: code){
                 return discipline
                 
             } else {

@@ -37,7 +37,7 @@ extension Course {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let code = req.parameters.get("code")!
             
-            if let course = self.findCourseWith(code: code) {
+            if let course = self.get(code: code) {
                 return course
                 
             } else {
@@ -52,7 +52,7 @@ extension Course {
             
             guard
                 let index = Int(variant),
-                let course = self.findCourseWith(code: code),
+                let course = self.get(code: code),
                 let tree = course.getTree(forIndex: index)
             else {
                 throw Abort(.notFound)

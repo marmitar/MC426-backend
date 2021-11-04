@@ -74,12 +74,12 @@ extension ContentController {
     }
     
     /// Recupera curso por código.
-    func get<T>(code: String) -> T{
+    func get(code: String) -> Content? {
         if self is Discipline.Controller {
-            return Discipline.Controller.shared.self.db.find(.code, equals: code) as! T
+            return Discipline.Controller.shared.self.db.find(.code, equals: code)! as Discipline as? Self.Content
         }
         else {
-            return Course.Controller.shared.self.db.find(.code, equals: code) as! T
+            return Course.Controller.shared.self.db.find(.code, equals: code)! as Course as? Self.Content
         }
     }
 }
