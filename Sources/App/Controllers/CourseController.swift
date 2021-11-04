@@ -6,10 +6,7 @@ extension Course {
     /// Controlador dos cursos recuperados por Scraping.
     ///
     /// Classe singleton. Usar `.shared` para pegar instância.
-    final class Controller: ContentController {
-        typealias Content = Course
-
-        public let db: Database<Course>
+    final class Controller: ContentController<Course> {
 
         /// Instância compartilhada do singleton.
         ///
@@ -19,25 +16,20 @@ extension Course {
 
         /// Inicializador privado do singleton.
         private init(logger: Logger) throws {
-            let data = try Course.scrape(logger: logger)
-            self.db = try Database(entries: Array(data.values), logger: logger)
+            let data = try Course.scrape(logger: .controllerLogger)
+            try super.init(entries: Array(data.values), logger: .controllerLogger)
         }
 
         /// Recupera curso por código.
-//        func get(code: String) -> Course? {
-//            self.db.find(.code, equals: code)
-//        }
-
-        /// Busca apenas entre os cursos.
-        func search(for text: String, upTo maxScore: Double) -> [(item: Course, score: Double)] {
-            self.db.search(text, upTo: maxScore)
+        private func findCourseWith(code: String) -> Course? {
+            self.db.find(.code, equals: code)
         }
         
         func fetchCourse(_ req: Request) throws -> Course {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let code = req.parameters.get("code")!
             
-            if let course = self.get(code: code) {
+            if let course = self.findCourseWith(code: code) {
                 return course
                 
             } else {
@@ -52,7 +44,7 @@ extension Course {
             
             guard
                 let index = Int(variant),
-                let course = self.get(code: code),
+                let course = self.findCourseWith(code: code),
                 let tree = course.getTree(forIndex: index)
             else {
                 throw Abort(.notFound)
