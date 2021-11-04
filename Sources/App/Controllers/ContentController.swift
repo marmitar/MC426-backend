@@ -11,7 +11,7 @@ import Vapor
 
 class ContentController<Content: Matchable> {
     
-    let db: Database<Content>
+    private let db: Database<Content>
     
     init(entries: [Content], logger: Logger) throws {
         self.db = try Database(entries: entries, logger: logger)
@@ -27,4 +27,16 @@ class ContentController<Content: Matchable> {
         }
     }
     
+    func fetchContent(on field: Content.Properties,_ req: Request) throws -> Content {
+
+        // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
+        let text = req.parameters.get("\(field)")!
+        
+        if let course = self.db.find(field, equals: text) {
+            return course
+            
+        } else {
+            throw Abort(.notFound)
+        }
+    }
 }
