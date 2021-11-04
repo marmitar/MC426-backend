@@ -27,47 +27,6 @@ extension Matchable {
     }
 }
 
-/// Controlador de dados buscáveis.
-//protocol ContentController {
-//    /// Tipo do dado que ele controla.
-//    associatedtype Content: Matchable
-//
-//    /// Busca textual no conjunto de dados.
-//    ///
-//    /// - Parameter text: Texto a ser buscado.
-//    /// - Parameter maxScore: Maior score que ainda
-//    ///   pode ser considerado um match.
-//    ///
-//    /// - Returns: Vetor com os dados que deram match
-//    ///   e o score de cada item para a query. Dados
-//    ///   com um score menor que `maxScore` não são
-//    ///   retornados.
-//    func search(for text: String, upTo maxScore: Double) -> [(item: Content, score: Double)]
-//}
-//
-//extension ContentController {
-//    /// Busca textual no conjunto de dados.
-//    ///
-//    /// Os resultados da busca são retornados de
-//    /// já forma ordenada. Apenas os `matches`
-//    /// melhores scores são retornados.
-//    ///
-//    /// - Parameter text: Texto a ser buscado.
-//    /// - Parameter matches: Quantidade máxima de
-//    ///   dados que deve ser retornada. Os dados com
-//    ///   os menores scores são ignorados.
-//    /// - Parameter maxScore: Maior score que ainda
-//    ///   pode ser considerado um match.
-//    ///
-//    /// - Returns: Vetor ordenado com os matches do
-//    ///   conjunto de dados. O vetor é limitado aos
-//    ///   `matches` melhores scores e todos os dados
-//    ///   tem um score menor que `maxScore`.
-//
-//
-//    /// Recupera curso por código.
-//
-//}
 
 extension Logger {
     /// ContentController logger.
