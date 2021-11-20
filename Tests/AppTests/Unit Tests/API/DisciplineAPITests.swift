@@ -16,13 +16,26 @@ final class DisciplineAPITests: XCTestCase {
         })
     }
 
-    func testFetchDisciplineWithCodeCharacterCountNotEqual5() throws {
+    func testFetchDisciplineWithCodeCharacterCountBiggerThan5() throws {
         let app = Application(.testing)
         defer { app.shutdown() }
         try configure(app)
 
         let route = "api/disciplina/"
         let discipline1 = "MC1022"
+
+        try app.test(.GET, route + discipline1, afterResponse: { res in
+            XCTAssertEqual(res.status, .notFound)
+        })
+    }
+
+    func testFetchDisciplineWithCodeCharacterCountLowerThan5() throws {
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try configure(app)
+
+        let route = "api/disciplina/"
+        let discipline1 = "MC10"
 
         try app.test(.GET, route + discipline1, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
