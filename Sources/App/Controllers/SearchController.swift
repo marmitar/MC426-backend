@@ -34,7 +34,7 @@ internal final class SearchController {
         return req.application.async(on: req.eventLoop) {
             self.search(
                 for: params.query,
-                limitingTo: max(params.limit ?? Self.defaultSearchLimit, Self.maxSearchLimit),
+                limitingTo: min(params.limit ?? Self.defaultSearchLimit, Self.maxSearchLimit),
                 maxScore: 0.99
             )
         }
