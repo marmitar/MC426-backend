@@ -39,7 +39,7 @@ final class SearchAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "?query="
+        let url = searchUrl(for: "")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
