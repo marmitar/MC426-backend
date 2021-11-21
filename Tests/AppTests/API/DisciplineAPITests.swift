@@ -3,15 +3,19 @@ import XCTVapor
 
 final class DisciplineAPITests: XCTestCase {
 
+    // MARK: - Constantes
+
     /// URL básica de disciplina.
     private static let route = "api/disciplina/"
+
+    // MARK: - Testes
 
     func testFetchDisciplineWithValidCode() throws {
         let app = Application(.testing)
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "MC102"
+        let url = disciplineURL("MC102")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -24,7 +28,7 @@ final class DisciplineAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "MC1022"
+        let url = disciplineURL("MC1022")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
@@ -36,7 +40,7 @@ final class DisciplineAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "MC10"
+        let url = disciplineURL("MC10")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
@@ -48,7 +52,7 @@ final class DisciplineAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "AA200"
+        let url = disciplineURL("AA200")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
@@ -60,10 +64,17 @@ final class DisciplineAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "mc102"
+        let url = disciplineURL("mc102")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
         })
     }
+
+    // MARK: - Métodos Auxiliares
+
+    private func disciplineURL(_ discipline: String) -> String {
+        Self.route + discipline
+    }
+
 }

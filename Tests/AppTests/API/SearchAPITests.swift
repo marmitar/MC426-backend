@@ -97,7 +97,7 @@ final class SearchAPITests: XCTestCase {
         })
     }
 
-    // MARK: - Métodos auxiliares
+    // MARK: - Métodos Auxiliares
 
     /// Monta a URL de busca incluindo os parâmetros.
     private func searchUrl(for query: String, limit: String? = nil) -> String {

@@ -3,15 +3,19 @@ import XCTVapor
 
 final class CourseAPITests: XCTestCase {
 
+    // MARK: - Constantes
+
     /// URL básica de curso.
     private static let route = "api/curso/"
+
+    // MARK: - Testes
 
     func testFetchCourseWithVariantsAndValidCodeAndNoVariantSelected() throws {
         let app = Application(.testing)
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "34/"
+        let url = courseURL(course: "34")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -24,7 +28,7 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "34/2/"
+        let url = courseURL(course: "34", variant: "2")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -37,7 +41,7 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "34/3/"
+        let url = courseURL(course: "34", variant: "3")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
@@ -50,7 +54,7 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "0/"
+        let url = courseURL(course: "0")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
@@ -62,7 +66,7 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "0/7/"
+        let url = courseURL(course: "0", variant: "7")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
@@ -74,7 +78,7 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "11/"
+        let url = courseURL(course: "11")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -87,7 +91,7 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "11/0/"
+        let url = courseURL(course: "11", variant: "0")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -100,10 +104,22 @@ final class CourseAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = Self.route + "11/1/"
+        let url = courseURL(course: "11", variant: "1")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .notFound)
         })
     }
+
+    // MARK: - Métodos Auxiliares
+
+    private func courseURL(course: String, variant: String? = nil) -> String {
+        var url = Self.route + course + "/"
+        if let variant = variant {
+            url += variant + "/"
+        }
+
+        return url
+    }
+
 }
