@@ -3,6 +3,7 @@ import XCTVapor
 
 final class CourseAPITests: XCTestCase {
 
+    /// URL básica de curso.
     private static let route = "api/curso/"
 
     func testFetchCourseWithVariantsAndValidCodeAndNoVariantSelected() throws {

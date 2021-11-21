@@ -2,7 +2,7 @@ import Foundation
 
 extension URL {
 
-    /// Return a new URL with a query item added.
+    /// Retorna uma nova URL com o parâmetro adicionado.
     func appending(_ queryItem: String, value: String?) -> URL {
         guard var urlComponents = URLComponents(string: absoluteString) else {
             return absoluteURL

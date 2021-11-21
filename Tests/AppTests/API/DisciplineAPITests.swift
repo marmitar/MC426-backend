@@ -3,6 +3,7 @@ import XCTVapor
 
 final class DisciplineAPITests: XCTestCase {
 
+    /// URL básica de disciplina.
     private static let route = "api/disciplina/"
 
     func testFetchDisciplineWithValidCode() throws {

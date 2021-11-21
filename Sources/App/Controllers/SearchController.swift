@@ -13,10 +13,10 @@ internal final class SearchController {
 
     /// Logger da aplicação, para reutilizar depois.
     private let logger: Logger = .controllerLogger
-    /// Search limit used when it's not specified.
+    /// Limite de busca usado quando não especificado.
     private static let defaultSearchLimit = 100
-    /// Maximum search limit.
-    private static let maxSearchLimit = 1000
+    /// Limite máximo de busca.
+    static let maxSearchLimit = 1000
     static let shared = SearchController()
 
     private init() { }
