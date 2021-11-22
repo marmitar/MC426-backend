@@ -3,7 +3,7 @@ import XCTVapor
 
 final class CourseAPITests: XCTestCase {
 
-    // MARK: - Montagem da URL do curso.
+    // MARK: - Montagem da URL do curso
 
     /// Constrói a URL para acesso do curso ou de sua modalidade.
     private func url(course code: String, variant: String? = nil) -> String {

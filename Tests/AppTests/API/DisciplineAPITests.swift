@@ -3,7 +3,7 @@ import XCTVapor
 
 final class DisciplineAPITests: XCTestCase {
 
-    // MARK: - Montagem da URL do curso.
+    // MARK: - Montagem da URL do curso
 
     /// Constrói a URL para acesso dos dados de uma disciplina.
     private func url(discipline code: String) -> String {

@@ -3,7 +3,7 @@ import XCTVapor
 
 final class SearchAPITests: XCTestCase {
 
-    // MARK: - Montagem da URL do curso.
+    // MARK: - Montagem da URL do curso
 
     /// Constrói a URL para busca incluindo parâmetros.
     private func url(for query: String, limit: String? = nil) -> String {
@@ -19,41 +19,15 @@ final class SearchAPITests: XCTestCase {
     // MARK: - Testes
 
     func testSearchWithStringAsLimit() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let url = url(for: "mc102", limit: "cinco")
-
-        try app.test(.GET, url, afterResponse: { res in
-            XCTAssertEqual(res.status, .badRequest)
-        })
+        try assertBadRequest(on: url(for: "mc102", limit: "cinco"))
     }
 
     func testSearchWithFloatAsLimit() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let url = url(for: "mc102", limit: "10.0")
-
-        try app.test(.GET, url, afterResponse: { res in
-            XCTAssertEqual(res.status, .badRequest)
-        })
+        try assertBadRequest(on: url(for: "mc102", limit: "10.0"))
     }
 
     func testSearchWithEmptyQuery() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let url = url(for: "")
-
-        try app.test(.GET, url, afterResponse: { res in
-            XCTAssertEqual(res.status, .ok)
-            XCTAssertEqual(res.content.contentType, .json)
-            XCTAssertJSON(text: res.body.string, matches: [])
-        })
+        try assertJsonResult(on: url(for: ""), matches: [])
     }
 
     // func testSearchWithNegativeLimit() throws {
@@ -69,15 +43,7 @@ final class SearchAPITests: XCTestCase {
     // }
 
     func testSearchWithZeroLimit() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
-        let url = url(for: "mc102", limit: "0")
-
-        try app.test(.GET, url, afterResponse: { res in
-            XCTAssertEqual(res.status, .badRequest)
-        })
+        try assertJsonResult(on: url(for: "mc102", limit: "0"), matches: [])
     }
 
     func testSearchWithValidDisciplineCodeAndLimit() throws {
