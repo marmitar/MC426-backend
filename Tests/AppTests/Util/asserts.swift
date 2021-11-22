@@ -20,6 +20,23 @@ func assertJsonResult(
     })
 }
 
+/// Checa se o acesso no endpoint do servidor retorna um resultado com tamanho esperado em JSON.
+func assertJsonSize(
+    on endpoint: String,
+    size: Int,
+    environment: Environment = .testing
+) throws {
+    let app = Application(environment)
+    defer { app.shutdown() }
+    try configure(app)
+
+    try app.test(.GET, endpoint, afterResponse: { res in
+        XCTAssertEqual(res.status, .ok)
+        XCTAssertEqual(res.content.contentType, .json)
+        XCTAssertEqual(JSONValue(res.body.string)?.asArray()?.count, size)
+    })
+}
+
 /// Assegura que o endpoint não existe no servidor.
 func assertNotFound(
     on endpoint: String,

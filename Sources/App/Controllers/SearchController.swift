@@ -29,6 +29,11 @@ internal final class SearchController {
 
     func searchFor(_ req: Request) throws -> EventLoopFuture<[Match]> {
         let params = try req.query.decode(SearchParams.self)
+        let limit = min(params.limit ?? Self.defaultSearchLimit, Self.maxSearchLimit)
+        guard limit > 0 else {
+            throw Abort(.badRequest)
+        }
+
         // roda em async para não travar a aplicação
         // https://docs.vapor.codes/4.0/async/#blocking
         return req.application.async(on: req.eventLoop) {

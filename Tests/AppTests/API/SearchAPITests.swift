@@ -30,48 +30,22 @@ final class SearchAPITests: XCTestCase {
         try assertJsonResult(on: url(for: ""), matches: [])
     }
 
-    // func testSearchWithNegativeLimit() throws {
-    //     let app = Application(.testing)
-    //     defer { app.shutdown() }
-    //     try configure(app)
-
-    //     let url = url(for: "mc102", limit: "-1")
-
-    //     try app.test(.GET, url, afterResponse: { res in
-    //         XCTAssertEqual(res.status, .badRequest)
-    //     })
-    // }
+    func testSearchWithNegativeLimit() throws {
+        try assertBadRequest(on: url(for: "mc102", limit: "-1"))
+    }
 
     func testSearchWithZeroLimit() throws {
-        try assertJsonResult(on: url(for: "mc102", limit: "0"), matches: [])
+        try assertBadRequest(on: url(for: "mc102", limit: "0"))
     }
 
     func testSearchWithValidDisciplineCodeAndLimit() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
         let limit = SearchController.maxSearchLimit - 100
-        let url = url(for: "mc102", limit: "\(limit)")
-
-        try app.test(.GET, url, afterResponse: { res in
-            XCTAssertEqual(res.status, .ok)
-            XCTAssertEqual(res.content.contentType, .json)
-        })
+        try assertJsonSize(on: url(for: "mc102", limit: "\(limit)"), size: limit)
     }
 
     func testSearchWithValidDisciplineCodeAndHugeLimit() throws {
-        let app = Application(.testing)
-        defer { app.shutdown() }
-        try configure(app)
-
         let limit = SearchController.maxSearchLimit + 100
-        let url = url(for: "mc102", limit: "\(limit)")
-
-        try app.test(.GET, url, afterResponse: { res in
-            XCTAssertEqual(res.status, .ok)
-            XCTAssertEqual(res.content.contentType, .json)
-        })
+        try assertJsonSize(on: url(for: "mc102", limit: "\(limit)"), size: SearchController.maxSearchLimit)
     }
 
 }
