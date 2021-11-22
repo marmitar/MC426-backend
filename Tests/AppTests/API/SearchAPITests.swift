@@ -43,7 +43,8 @@ final class SearchAPITests: XCTestCase {
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
-            XCTAssertEqual(res.body.string, "[]")
+            XCTAssertEqual(res.content.contentType, .json)
+            XCTAssertJSON(text: res.body.string, matches: [])
         })
     }
 
@@ -81,6 +82,7 @@ final class SearchAPITests: XCTestCase {
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
+            XCTAssertEqual(res.content.contentType, .json)
         })
     }
 
@@ -94,6 +96,7 @@ final class SearchAPITests: XCTestCase {
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
+            XCTAssertEqual(res.content.contentType, .json)
         })
     }
 
