@@ -39,12 +39,12 @@ final class SearchAPITests: XCTestCase {
     }
 
     func testSearchWithValidDisciplineCodeAndLimit() throws {
-        let limit = SearchController.maxSearchLimit - 100
+        let limit = SearchController.maxSearchLimit - 1
         try assertJsonSize(on: url(for: "mc102", limit: "\(limit)"), size: limit)
     }
 
     func testSearchWithValidDisciplineCodeAndHugeLimit() throws {
-        let limit = SearchController.maxSearchLimit + 100
+        let limit = SearchController.maxSearchLimit + 1
         try assertJsonSize(on: url(for: "mc102", limit: "\(limit)"), size: SearchController.maxSearchLimit)
     }
 
