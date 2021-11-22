@@ -3,10 +3,18 @@ import XCTVapor
 
 final class SearchAPITests: XCTestCase {
 
-    // MARK: - Constantes
+    // MARK: - Montagem da URL do curso.
 
-    /// URL básica de busca.
-    private static let route = "api/busca"
+    /// Constrói a URL para busca incluindo parâmetros.
+    private func url(for query: String, limit: String? = nil) -> String {
+        var url = URL(string: "api/busca")!
+        url = url.appending("query", value: query)
+        if let limit = limit {
+            url = url.appending("limit", value: limit)
+        }
+
+        return url.absoluteString
+    }
 
     // MARK: - Testes
 
@@ -15,7 +23,7 @@ final class SearchAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = searchUrl(for: "mc102", limit: "cinco")
+        let url = url(for: "mc102", limit: "cinco")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .badRequest)
@@ -27,7 +35,7 @@ final class SearchAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = searchUrl(for: "mc102", limit: "10.0")
+        let url = url(for: "mc102", limit: "10.0")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .badRequest)
@@ -39,7 +47,7 @@ final class SearchAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = searchUrl(for: "")
+        let url = url(for: "")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -53,7 +61,7 @@ final class SearchAPITests: XCTestCase {
     //     defer { app.shutdown() }
     //     try configure(app)
 
-    //     let url = searchUrl(for: "mc102", limit: "-1")
+    //     let url = url(for: "mc102", limit: "-1")
 
     //     try app.test(.GET, url, afterResponse: { res in
     //         XCTAssertEqual(res.status, .badRequest)
@@ -65,7 +73,7 @@ final class SearchAPITests: XCTestCase {
         defer { app.shutdown() }
         try configure(app)
 
-        let url = searchUrl(for: "mc102", limit: "0")
+        let url = url(for: "mc102", limit: "0")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .badRequest)
@@ -78,7 +86,7 @@ final class SearchAPITests: XCTestCase {
         try configure(app)
 
         let limit = SearchController.maxSearchLimit - 100
-        let url = searchUrl(for: "mc102", limit: "\(limit)")
+        let url = url(for: "mc102", limit: "\(limit)")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
@@ -92,25 +100,12 @@ final class SearchAPITests: XCTestCase {
         try configure(app)
 
         let limit = SearchController.maxSearchLimit + 100
-        let url = searchUrl(for: "mc102", limit: "\(limit)")
+        let url = url(for: "mc102", limit: "\(limit)")
 
         try app.test(.GET, url, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
             XCTAssertEqual(res.content.contentType, .json)
         })
-    }
-
-    // MARK: - Métodos Auxiliares
-
-    /// Monta a URL de busca incluindo os parâmetros.
-    private func searchUrl(for query: String, limit: String? = nil) -> String {
-        var url = URL(string: Self.route)!
-        url = url.appending("query", value: query)
-        if let limit = limit {
-            url = url.appending("limit", value: limit)
-        }
-
-        return url.absoluteString
     }
 
 }
