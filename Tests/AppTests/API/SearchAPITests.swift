@@ -24,7 +24,7 @@ final class SearchAPITests: XCTestCase {
             return "api/curso/\(code)/"
         }
     }
-    
+
     // MARK: - Testes
 
     func testSearchWithStringAsLimit() throws {
@@ -58,22 +58,21 @@ final class SearchAPITests: XCTestCase {
     }
 
     // MARK: - Testes Qualitativos
-    
+
     func testSearchQuality() throws {
-        
         let app = Application(.testing)
         defer { app.shutdown() }
         try configure(app)
-        
-        //Pega uma disciplina aleatória do curso 34 e segunda proficiência
+
+        // Pega uma disciplina aleatória do curso 34 e segunda proficiência
         try app.test(.GET, url(course: "34", variant: "2"), afterResponse: { res in
             let courseDisc = JSONValue(fromJson: res.body.string)?.asArray()
             let randomSemester = courseDisc?.randomElement()?.asArray()
             let randomDiscipline = randomSemester?.randomElement()?.asString()
             XCTAssertNotNil(randomDiscipline)
             let discUrl = self.url(search: randomDiscipline!, limit: "10")
-            
-            //Faz uma busca com a disciplina aleatória e verifica se é a primeira da pesquisa
+
+            // Faz uma busca com a disciplina aleatória e verifica se é a primeira da pesquisa
             try app.test(.GET, discUrl, afterResponse: { res in
                 XCTAssertEqual(res.status, .ok)
                 XCTAssertEqual(res.content.contentType, .json)
@@ -82,6 +81,6 @@ final class SearchAPITests: XCTestCase {
                 XCTAssertEqual(disc!["code"]?.asString(), randomDiscipline!)
             })
         })
-        
+
     }
 }
