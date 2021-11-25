@@ -15,8 +15,6 @@ let package = Package(
        .macOS(.v11)
     ],
     dependencies: [
-        // biblioteca para Logging, usada pelo Vapor
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.4.0"),
         // framework para servidores web
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
     ],
@@ -26,7 +24,7 @@ let package = Package(
             name: "App",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
-                .target(name: "Services")
+                .target(name: "Fuzz")
             ],
             swiftSettings: swiftSettings
         ),
@@ -34,15 +32,6 @@ let package = Package(
         .executableTarget(
             name: "Run",
             dependencies: [.target(name: "App")],
-            swiftSettings: swiftSettings
-        ),
-        // funções e tipos utilitários
-        .target(
-            name: "Services",
-            dependencies: [
-                .product(name: "Logging", package: "swift-log"),
-                .target(name: "Fuzz")
-            ],
             swiftSettings: swiftSettings
         ),
         // integração com RapidFuzz

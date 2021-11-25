@@ -1,5 +1,4 @@
 import Foundation
-import Services
 import Vapor
 
 extension Course {
@@ -21,24 +20,24 @@ extension Course {
         }
 
         /// Recupera curso por código.
-        
+
         func fetchCourse(_ req: Request) throws -> Course {
             try fetchContent(on: .code, req)
         }
-        
+
         func fetchCourseTree(_ req: Request) throws -> CourseTree {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let variant = req.parameters.get("variant")!
-            
+
             let course = try self.fetchCourse(req)
-            
+
             guard
                 let index = Int(variant),
                 let tree = course.getTree(forIndex: index)
             else {
                 throw Abort(.notFound)
             }
-            
+
             return tree
         }
     }

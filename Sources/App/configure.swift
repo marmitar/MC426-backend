@@ -1,6 +1,5 @@
 import Foundation
 import Vapor
-import Services
 
 /// Future usada em Vapor e NIO.
 typealias Future<T> = EventLoopFuture<T>
@@ -20,9 +19,9 @@ public func configure(_ app: Application) throws {
         encoder.outputFormatting.formUnion([.sortedKeys, .prettyPrinted])
         ContentConfiguration.global.use(encoder: encoder, for: .json)
     }
-    
+
     try initializeControllers(app)
-    
+
     // register routes
     try routes(app)
 }
@@ -66,4 +65,3 @@ extension ContentConfiguration {
         }
     }
 }
-

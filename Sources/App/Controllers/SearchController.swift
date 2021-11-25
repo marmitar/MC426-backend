@@ -7,7 +7,6 @@
 
 import Foundation
 import Vapor
-import Services
 
 internal final class SearchController {
 
