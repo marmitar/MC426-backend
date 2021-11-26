@@ -1,7 +1,6 @@
 import Foundation
 import Vapor
 
-
 /// Dados que podem ser retornados após a busca.
 ///
 /// A forma reduzida é usada para enviar menos informação
@@ -25,7 +24,6 @@ extension Matchable {
         "\(Self.self)".lowercased()
     }
 }
-
 
 extension Logger {
     /// ContentController logger.

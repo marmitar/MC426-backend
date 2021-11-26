@@ -38,10 +38,9 @@ private func initializeControllers(_ app: Application) throws {
     let courses = app.async {
         Course.Controller.shared
     }
-    let _ = try disciplines.wait()
-    let _ = try courses.wait()
+    _ = try disciplines.wait()
+    _ = try courses.wait()
 }
-
 
 extension Application {
     /// Executa closure assincronamente em `eventLoop`.

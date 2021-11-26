@@ -8,7 +8,7 @@ let package = Package(
     ],
     dependencies: [
         // framework para servidores web
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.53.0"),
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.53.0")
     ],
     targets: [
         // o servidor propriamente
@@ -41,14 +41,14 @@ let package = Package(
                 .headerSearchPath("RapidFuzz"),
                 // Modo de cálculo do score, usando uma das classes em
                 // https://github.com/maxbachmann/rapidfuzz-cpp#readme
-                .define("RATIO_TYPE", to: "CachedPartialRatio"),
+                .define("RATIO_TYPE", to: "CachedPartialRatio")
             ],
             swiftSettings: DefaultSettings.swift
         ),
         // testes do servidor
         .testTarget(name: "AppTests", dependencies: [
             .target(name: "App"),
-            .product(name: "XCTVapor", package: "vapor"),
+            .product(name: "XCTVapor", package: "vapor")
         ])
     ],
     swiftLanguageVersions: [.v5],
@@ -56,29 +56,27 @@ let package = Package(
     cxxLanguageStandard: .gnucxx20
 )
 
+/// COnfigurações padrões de cada linguagem.
 private enum DefaultSettings {
     static let swift: [SwiftSetting] = [
         // Detalhes em https://github.com/swift-server/guides/blob/main/docs/building.md#building-for-production
-        SwiftSetting.unsafeFlags(
+        .unsafeFlags(
             [
-                "-Ounchecked", "-remove-runtime-asserts", "-gline-tables-only",
+                "-Ounchecked", "-remove-runtime-asserts", "-gnone",
                 "-cross-module-optimization", "-whole-module-optimization"
             ],
             .when(configuration: .release)
         ),
-        SwiftSetting.unsafeFlags(
-            ["-Onone", "-g"],
-            .when(configuration: .debug)
-        )
+        .unsafeFlags(["-Onone", "-g"], .when(configuration: .debug))
     ]
 
     private static let optimizationFlags = [
         "-O3", "-march=native", "-mtune=native", "-pipe", "-fno-plt",
-        "-ffast-math", "-fshort-enums",
+        "-ffast-math", "-fshort-enums"
     ]
     private static let debugFlags = ["-O1", "-ggdb3"]
 
-    static let c: [CSetting] = [
+    static let cxx: [CXXSetting] = [
         // habilita warnings e errors
         .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic"]),
         .define("_FORTIFY_SOURCE", to: "1"),
@@ -88,7 +86,8 @@ private enum DefaultSettings {
         .unsafeFlags(optimizationFlags, .when(configuration: .release))
     ]
 
-    static let cxx: [CXXSetting] = [
+    // swiftlint:disable identifier_name
+    static let c: [CSetting] = [
         // habilita warnings e errors
         .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic"]),
         .define("_FORTIFY_SOURCE", to: "1"),

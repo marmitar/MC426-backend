@@ -1,7 +1,6 @@
 import Foundation
 import Vapor
 
-
 typealias CourseTree = [[String]]
 
 /// Representação de um curso.
@@ -24,10 +23,10 @@ struct Course: Content {
     /// Retorna o nome das modalidades, se houver.
     func getVariantNames() -> [String]? {
         switch content {
-        case .variants(let variants):
-            return variants.map { $0.name }
-        case .tree:
-            return nil
+            case .variants(let variants):
+                return variants.map { $0.name }
+            case .tree:
+                return nil
         }
     }
 
@@ -39,16 +38,16 @@ struct Course: Content {
     /// na posição `index`.
     func getTree(forIndex index: Int) -> CourseTree? {
         switch content {
-        case .tree(let tree):
-            guard index == 0 else {
-                return nil
-            }
-            return tree
-        case .variants(let variants):
-            guard let variant = variants.get(at: index) else {
-                return nil
-            }
-            return variant.tree
+            case .tree(let tree):
+                guard index == 0 else {
+                    return nil
+                }
+                return tree
+            case .variants(let variants):
+                guard let variant = variants.get(at: index) else {
+                    return nil
+                }
+                return variant.tree
         }
     }
 }
@@ -80,10 +79,10 @@ extension Course: Searchable {
         @inlinable
         func get(from item: Course) -> String {
             switch self {
-            case .code:
-                return item.code
-            case .name:
-                return item.name
+                case .code:
+                    return item.code
+                case .name:
+                    return item.name
             }
         }
     }

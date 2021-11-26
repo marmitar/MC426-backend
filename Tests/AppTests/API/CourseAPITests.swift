@@ -23,8 +23,8 @@ final class CourseAPITests: XCTestCase {
             "variant": [
                 "AA - Sistemas de Computação",
                 "AB - Sistemas e Processos Industriais",
-                "AX - Para Matrícula Antes da Opção",
-            ],
+                "AX - Para Matrícula Antes da Opção"
+            ]
         ])
     }
 
@@ -39,14 +39,13 @@ final class CourseAPITests: XCTestCase {
             ["EA074", "EA201", "EA616", "EA619", "EA979"],
             ["BE310", "EA072", "EA080", "EA721", "EA722", "EG950"],
             ["CE304", "CE838", "EA006", "EA044", "EE610"],
-            ["CE738"],
+            ["CE738"]
         ])
     }
 
     func testFetchCourseWithWithVariantsAndValidCodeAndInvalidVariant() throws {
         try assertNotFound(on: url(course: "34", variant: "3"))
     }
-
 
     func testFetchCourseWithInvalidCodeAndNoVariantSelected() throws {
         try assertNotFound(on: url(course: "0"))
@@ -74,7 +73,7 @@ final class CourseAPITests: XCTestCase {
             ["EA076", "EA721", "EA722", "EE531", "EE640", "EE755", "EE882", "ET720", "ET911"],
             ["CE738", "CE838", "EA044", "EE610", "EE641", "EE833"],
             ["BE310", "CE304", "EA006"],
-            [],
+            []
         ])
     }
 

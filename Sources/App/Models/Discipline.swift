@@ -1,7 +1,6 @@
 import Foundation
 import Vapor
 
-
 /// Representação de uma matéria.
 struct Discipline: Content {
     /// Código da disciplina.

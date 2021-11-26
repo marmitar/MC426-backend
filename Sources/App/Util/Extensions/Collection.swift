@@ -71,7 +71,7 @@ extension RandomAccessCollection {
     /// data races.
     private func unsafeConcurrentReduce<Result>(
         into initialResult: Result,
-        _ updateAccumulatingResult: (inout Mutex<Result>, Element) throws -> ()
+        _ updateAccumulatingResult: (inout Mutex<Result>, Element) throws -> Void
     ) rethrows -> Result {
         /// mutex protege contra data races
         var result = Mutex(initialResult)
@@ -150,19 +150,19 @@ extension RandomAccessCollection where Index: BinaryInteger {
         on key: (Element) throws -> T,
         by areInIncreasingOrder: (T, T) throws -> Bool
     ) rethrows -> Element? {
-        var lo = self.startIndex
-        var hi = self.index(lo, offsetBy: self.count)
+        var low = self.startIndex
+        var high = self.index(low, offsetBy: self.count)
 
-        var result: Element? = nil
-        while lo < hi {
-            let mid = (lo + hi) / 2
+        var result: Element?
+        while low < high {
+            let mid = (low + high) / 2
             result = self[mid]
             let midKey = try key(self[mid])
 
             if try areInIncreasingOrder(midKey, searchKey) {
-                lo = mid + 1
+                low = mid + 1
             } else if try areInIncreasingOrder(searchKey, midKey) {
-                hi = mid
+                high = mid
             } else {
                 return result
             }

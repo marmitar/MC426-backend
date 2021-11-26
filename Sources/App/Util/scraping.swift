@@ -90,7 +90,6 @@ extension WebScrapable {
     }
 }
 
-
 /// Um dos scripts em Python dentro da pasta `/Scraping`.
 private struct WebScrapingScript {
     /// Caminho para o script.

@@ -1,0 +1,12 @@
+excluded:
+    - .build
+
+switch_case_alignment:
+    indented_cases: true
+
+type_name:
+    excluded: Of
+
+nesting:
+    type_level: 2
+    always_allow_one_type_in_functions: true
