@@ -3,14 +3,14 @@ import Logging
 
 /// Algum dado que é recuperado por um dos
 /// scipts de Web Scraping.
-public protocol WebScrapable {
+protocol WebScrapable {
     /// Nome do script de scrape.
     static var scriptName: String { get }
     /// Tipo de retorno do scrape.
     associatedtype Output: Decodable
 }
 
-public extension WebScrapable {
+extension WebScrapable {
     /// Executa o script de Scraping e parseia o resultado.
     ///
     /// Usa um logger para avisar o estado da execução.

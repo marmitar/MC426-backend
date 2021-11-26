@@ -2,7 +2,7 @@ import Foundation
 import Logging
 
 /// Dado (struct ou classe) com campos procuráveis.
-public protocol Searchable {
+protocol Searchable {
     /// Propriedades procuráveis do tipo.
     associatedtype Properties: SearchableProperty where Properties.Of == Self
     /// Propriedade usada para ordenadação.
@@ -14,7 +14,7 @@ public protocol Searchable {
     }
 }
 
-public extension Searchable {
+ extension Searchable {
     @inlinable
     static var sortOn: Properties? { nil }
 
@@ -32,7 +32,7 @@ public extension Searchable {
 }
 
 /// Enum das propriedades procuráveis de um dado.
-public protocol SearchableProperty: CaseIterable, Equatable {
+protocol SearchableProperty: CaseIterable, Equatable {
     /// Tipo do dado procurável.
     associatedtype Of: Searchable
 
@@ -47,15 +47,15 @@ public protocol SearchableProperty: CaseIterable, Equatable {
     var weight: Double { @inlinable get }
 }
 
-public extension SearchableProperty {
+extension SearchableProperty {
     @inlinable
     var weight: Double { 1.0 }
 }
 
 /// Conjunto imutável de um mesmo tipo de dados procuráveis.
-public struct Database<Item: Searchable> {
+struct Database<Item: Searchable> {
     /// Campos procuráveis do dado.
-    public typealias Field = Item.Properties
+    typealias Field = Item.Properties
     /// Campo de ordenação.
     private static var sortedOn: Field? { Item.sortOn }
     /// Par struct e sua cache de fuzzy matching.
@@ -80,7 +80,7 @@ public struct Database<Item: Searchable> {
     }
 
     /// Constrói banco de dados na memória com cache de busca.
-    public init(entries data: [Item], logger: Logger) throws {
+    init(entries data: [Item], logger: Logger) throws {
         // garante pesos positivos
         guard Item.properties.allSatisfy({ $0.weight > 0 }) else {
             throw NonPositiveWeightError(on: Item.self)
@@ -133,7 +133,7 @@ public struct Database<Item: Searchable> {
     ///
     /// Executa busca binário quando o campo é base de ordenação
     /// (`Searchable.sortOn`) e busca linear nos outros casos.
-    public func find(_ field: Field, equals value: String) -> Item? {
+    func find(_ field: Field, equals value: String) -> Item? {
         switch field {
             case Self.sortedOn:
                 return self.findOnSorted(with: value)
@@ -146,7 +146,7 @@ public struct Database<Item: Searchable> {
     ///
     /// - Returns: Os dados com score menor que `maxScore`,
     ///   e o seu score para a string de busca.
-    public func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
+    func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
         // Prepara o texto que será buscado.
         let searchText = text.prepareForSearch()
         return self.entries.compactMap { (item, cache) in
@@ -206,7 +206,7 @@ protocol ScoreProvider {
 }
 
 /// Erro para tipos `Searchable` mas com peso negativo ou zero.
-private struct NonPositiveWeightError: Error, LocalizedError {
+struct NonPositiveWeightError: Error, LocalizedError {
     /// Todas as propriedades do tipo defeituoso.
     private let properties: [(name: String, weight: Double)]
     /// Tipo com problema de peso não-positivo.

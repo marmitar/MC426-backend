@@ -8,7 +8,7 @@
 import Foundation
 import Vapor
 
-internal final class SearchController {
+internal struct SearchController {
 
     /// Logger da aplicação, para reutilizar depois.
     private let logger: Logger = .controllerLogger

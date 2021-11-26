@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 
 /// Checa se `text` representa o mesmo objeto que `matches` em JSON.
-public func XCTAssertJSON(
+func XCTAssertJSON(
     text: @autoclosure () throws -> String,
     matches value: @autoclosure () throws -> JSONValue,
     _ message: @autoclosure () -> String = "",
@@ -21,7 +21,7 @@ public func XCTAssertJSON(
 /// Um valor que segue um dos tipos básicos em JSON.
 ///
 /// @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON
-public enum JSONValue: Equatable, Hashable {
+enum JSONValue: Equatable, Hashable {
     // MARK: - Valores de JSON.
 
     /// Um objeto que relaciona chaves à valores.
@@ -134,13 +134,13 @@ public enum JSONValue: Equatable, Hashable {
 }
 
 extension JSONValue: CustomStringConvertible {
-    public var description: String {
+    var description: String {
         self.asJsonString() ?? "Invalid JSONValue"
     }
 }
 
 extension JSONValue: CustomDebugStringConvertible {
-    public var debugDescription: String {
+    var debugDescription: String {
         switch self {
             case .object(let value):
                 return "object(\(value))"
@@ -161,7 +161,7 @@ extension JSONValue: CustomDebugStringConvertible {
 }
 
 extension JSONValue: LosslessStringConvertible {
-    public init?(_ description: String) {
+    init?(_ description: String) {
         if let value = Self.init(fromJson: description) {
             self = value
         } else {
@@ -171,61 +171,61 @@ extension JSONValue: LosslessStringConvertible {
 }
 
 extension JSONValue: ExpressibleByDictionaryLiteral {
-    public init(dictionaryLiteral elements: (String, JSONValue)...) {
+    init(dictionaryLiteral elements: (String, JSONValue)...) {
         self = .object(Dictionary(uniqueKeysWithValues: elements))
     }
 }
 
 extension JSONValue: ExpressibleByArrayLiteral {
-    public init(arrayLiteral elements: JSONValue...) {
+    init(arrayLiteral elements: JSONValue...) {
         self = .array(Array(elements))
     }
 }
 
 extension JSONValue: ExpressibleByFloatLiteral {
-    public init(floatLiteral value: Double) {
+    init(floatLiteral value: Double) {
         self = .number(value)
     }
 }
 
 extension JSONValue: ExpressibleByIntegerLiteral {
-    public init(integerLiteral value: Int) {
+    init(integerLiteral value: Int) {
         self = .number(Double(value))
     }
 }
 
 extension JSONValue: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
+    init(stringLiteral value: String) {
         self = .string(value)
     }
 }
 
 extension JSONValue: ExpressibleByExtendedGraphemeClusterLiteral {
-    public init(extendedGraphemeClusterLiteral value: String) {
+    init(extendedGraphemeClusterLiteral value: String) {
         self = .string(value)
     }
 }
 
 extension JSONValue: ExpressibleByUnicodeScalarLiteral {
-    public init(unicodeScalarLiteral value: String) {
+    init(unicodeScalarLiteral value: String) {
         self = .string(value)
     }
 }
 
 extension JSONValue: ExpressibleByBooleanLiteral {
-    public init(booleanLiteral value: BooleanLiteralType) {
+    init(booleanLiteral value: BooleanLiteralType) {
         self = .boolean(value)
     }
 }
 
 extension JSONValue: ExpressibleByNilLiteral {
-    public init(nilLiteral: ()) {
+    init(nilLiteral: ()) {
         self = .null
     }
 }
 
 extension JSONValue: Encodable {
-    public func encode(to encoder: Encoder) throws {
+    func encode(to encoder: Encoder) throws {
         switch self {
             case .object(let value):
                 try value.encode(to: encoder)
@@ -280,55 +280,55 @@ extension JSONValue: Decodable {
         ))
     }
 
-    public init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         self = try .from(decoder)
     }
 }
 
 /// Valores que podem ser convertidos para JSON sem chance de erro.
-public protocol JSONConvertible {
+protocol JSONConvertible {
     /// Transforma em um valor de JSON.
     func toJsonValue() -> JSONValue
 }
 
 extension JSONValue: JSONConvertible {
-    public func toJsonValue() -> JSONValue {
+    func toJsonValue() -> JSONValue {
         self
     }
 }
 
-public extension JSONConvertible where Self: StringProtocol {
+extension JSONConvertible where Self: StringProtocol {
     func toJsonValue() -> JSONValue {
         .string(String(self))
     }
 }
 
-public extension JSONConvertible where Self: BinaryInteger {
+extension JSONConvertible where Self: BinaryInteger {
     func toJsonValue() -> JSONValue {
         .number(Double(self))
     }
 }
 
-public extension JSONConvertible where Self: BinaryFloatingPoint {
+extension JSONConvertible where Self: BinaryFloatingPoint {
     func toJsonValue() -> JSONValue {
         .number(Double(self))
     }
 }
 
 extension Bool: JSONConvertible {
-    public func toJsonValue() -> JSONValue {
+    func toJsonValue() -> JSONValue {
         .boolean(self)
     }
 }
 
-public extension JSONConvertible where Self: Sequence, Self.Element: JSONConvertible {
+extension JSONConvertible where Self: Sequence, Self.Element: JSONConvertible {
     func toJsonValue() -> JSONValue {
         .array(self.map { $0.toJsonValue() })
     }
 }
 
 extension Dictionary: JSONConvertible where Key: StringProtocol, Value: JSONConvertible {
-    public func toJsonValue() -> JSONValue {
+    func toJsonValue() -> JSONValue {
         .object(.init(uniqueKeysWithValues: self.map {
             (String($0), $1.toJsonValue())
         }))
@@ -336,7 +336,7 @@ extension Dictionary: JSONConvertible where Key: StringProtocol, Value: JSONConv
 }
 
 extension Optional: JSONConvertible where Wrapped: JSONConvertible {
-    public func toJsonValue() -> JSONValue {
+    func toJsonValue() -> JSONValue {
         if let value = self {
             return value.toJsonValue()
         } else {

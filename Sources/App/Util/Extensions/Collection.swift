@@ -1,13 +1,13 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Vitor Jundi Moriya on 25/10/21.
 //
 
 import Foundation
 
-public extension Collection {
+extension Collection {
     /// Acesso opcional na coleção para posições que podem
     /// ser inválidas.
     ///
@@ -121,7 +121,7 @@ extension RandomAccessCollection {
     }
 }
 
-public extension MutableCollection where Self: RandomAccessCollection {
+extension MutableCollection where Self: RandomAccessCollection {
     /// Ordena a coleção usando uma chave de comparação.
     ///
     /// - Complexity: O(*n* log *n*)
