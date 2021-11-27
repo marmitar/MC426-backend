@@ -16,7 +16,7 @@ let package = Package(
             name: "App",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
-                .target(name: "Fuzz")
+                .target(name: "RapidFuzz")
             ],
             cSettings: DefaultSettings.c,
             cxxSettings: DefaultSettings.cxx,
@@ -34,11 +34,11 @@ let package = Package(
         ),
         // integração com RapidFuzz
         .target(
-            name: "Fuzz",
-            exclude: ["RapidFuzz"],
+            name: "RapidFuzz",
+            exclude: ["rapidfuzz-cpp"],
             cSettings: DefaultSettings.c,
             cxxSettings: DefaultSettings.cxx + [
-                .headerSearchPath("RapidFuzz"),
+                .headerSearchPath("rapidfuzz-cpp"),
                 // Modo de cálculo do score, usando uma das classes em
                 // https://github.com/maxbachmann/rapidfuzz-cpp#readme
                 .define("RATIO_TYPE", to: "CachedPartialRatio")
@@ -70,15 +70,18 @@ private enum DefaultSettings {
         .unsafeFlags(["-Onone", "-g"], .when(configuration: .debug))
     ]
 
+    private static let warnings = [
+        "-Wall", "-Wextra", "-Wpedantic"
+    ]
     private static let optimizationFlags = [
         "-O3", "-march=native", "-mtune=native", "-pipe", "-fno-plt",
-        "-ffast-math", "-fshort-enums"
+        "-ffast-math", "-fshort-enums", "-fno-exceptions"
     ]
     private static let debugFlags = ["-O1", "-ggdb3"]
 
     static let cxx: [CXXSetting] = [
         // habilita warnings e errors
-        .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic"]),
+        .unsafeFlags(warnings),
         .define("_FORTIFY_SOURCE", to: "1"),
         .unsafeFlags(debugFlags, .when(configuration: .debug)),
         // flags de otimização
@@ -89,7 +92,7 @@ private enum DefaultSettings {
     // swiftlint:disable identifier_name
     static let c: [CSetting] = [
         // habilita warnings e errors
-        .unsafeFlags(["-Wall", "-Wextra", "-Wpedantic"]),
+        .unsafeFlags(warnings),
         .define("_FORTIFY_SOURCE", to: "1"),
         .unsafeFlags(debugFlags, .when(configuration: .debug)),
         // flags de otimização

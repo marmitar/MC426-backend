@@ -1,11 +1,11 @@
 import Foundation
-import Fuzz
+import RapidFuzz
 
 /// Wrapper para fazzy matching de strings usando a biblioteca
 /// [RapidFuzz](https://github.com/maxbachmann/rapidfuzz-cpp).
 final class FuzzyField: ScoreProvider {
     /// Struct em C++ (com interface em C).
-    private var cached: FuzzCachedRatio
+    private var cached: RapidFuzzCachedRatio
 
     /// Constrói cache de `value` para comparação com outras
     /// strings e calcula a norma do campo.
@@ -13,14 +13,14 @@ final class FuzzyField: ScoreProvider {
     init(value: String) {
         // constroi com a API de C++
         self.cached = value.utf8CString.withUnsafeBufferPointer { ptr in
-            fuzz_cached_init(ptr.baseAddress!)
+            rapidfuzz_cached_init(ptr.baseAddress!)
         }
     }
 
     /// Precisa desalocar a memória em C++.
     @inlinable
     deinit {
-        fuzz_cached_deinit(&self.cached)
+        rapidfuzz_cached_deinit(&self.cached)
     }
 
     /// Menor valor que para usar o partial ratio.
@@ -33,7 +33,7 @@ final class FuzzyField: ScoreProvider {
     @inlinable
     func score(for text: String) -> Double {
         let scoreValue = text.utf8CString.withUnsafeBufferPointer { ptr in
-            fuzz_cached_ratio(self.cached, ptr.baseAddress!, ptr.count)
+            rapidfuzz_cached_ratio(self.cached, ptr.baseAddress!, ptr.count)
         }
         // se o score for grande o bastante, então retorna ele
         if scoreValue > Self.minScore + Double.ulpOfOne {
@@ -41,9 +41,11 @@ final class FuzzyField: ScoreProvider {
         }
         // senão, calcula um novo score, usando levenshtein diretamente
         let newScore = text.utf8CString.withUnsafeBufferPointer { ptr in
-            fuzz_levenshtein(self.cached.buffer, self.cached.buflen, ptr.baseAddress!, ptr.count)
+            rapidfuzz_levenshtein(self.cached.buffer, self.cached.buflen, ptr.baseAddress!, ptr.count)
         }
         // garante o resultado no intervalo (ulpOfOne, minScore + ulpOfOne].
         return Double.ulpOfOne + Self.minScore * newScore.clamped(from: 0, upTo: 1.0)
     }
 }
+
+// xxx
