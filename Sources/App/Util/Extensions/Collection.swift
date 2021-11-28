@@ -29,6 +29,31 @@ extension Collection {
     }
 }
 
+extension Sequence {
+    /// Mapeamento assíncrono da sequência sem manter a ordem dos elementos.
+    func asyncUnorderedMap<Transformed>(
+        _ transform: @escaping @Sendable (Element) async throws -> Transformed
+    ) async rethrows -> [Transformed] {
+
+        try await withThrowingTaskGroup(of: Transformed.self) { group in
+            // inicia cada mapeamento em sua própria task
+            for element in self {
+                let added = group.addTaskUnlessCancelled {
+                    try await transform(element)
+                }
+                // para antes se a task for cancelada
+                if !added {
+                    break
+                }
+            }
+            // só junta no final
+            return try await group.reduce(into: []) { total, element in
+                total.append(element)
+            }
+        }
+    }
+}
+
 extension MutableCollection where Self: RandomAccessCollection {
     /// Ordena a coleção usando uma chave de comparação.
     ///

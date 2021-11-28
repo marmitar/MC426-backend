@@ -3,17 +3,18 @@ import Vapor
 import SwiftSoup
 
 /// Algum dado que é recuperado da internet, em geral através de parsing HTML.
-protocol WebScrapabl: Codable { // TODO: fix nome
+protocol WebScrapabl { // TODO: fix nome
     /// Nome do arquivo usado para fazer caching dos resultados.
     ///
     /// Padrão: nome do tipo.
-    static var cacheFile: String {
-        @inlinable get
-    }
+    static var cacheFile: String { @inlinable get }
+
+    /// Saída do script de scraping. Normalmente uma coleção de `Self`.
+    associatedtype WebScrapingOutput: Codable
 
     /// Faz o scraping do tipo de forma assíncrona usando o `WebScraper` da aplicação.
     @inlinable
-    static func scrape(with scraper: WebScraper) async throws -> Self
+    static func scrape(with scraper: WebScraper) async throws -> WebScrapingOutput
 }
 
 extension WebScrapabl {
@@ -30,24 +31,27 @@ extension Application {
 
     /// WebScraper padrão da aplicação.
     var webScraper: WebScraper {
-        // faz a inicialização de modo lazy
-        if let scraper = self.storage[WebScraperKey.self] {
-            return scraper
-        } else {
-            let scraper = WebScraper(app: self)
-            self.storage[WebScraperKey.self] = scraper
-            return scraper
+        get {
+            // faz a inicialização de modo lazy
+            if let scraper = self.storage[WebScraperKey.self] {
+                return scraper
+            } else {
+                let scraper = WebScraper(app: self)
+                self.webScraper = scraper
+                return scraper
+            }
+        }
+        set {
+            self.storage[WebScraperKey.self] = newValue
         }
     }
 }
-
-/// Versão HTTP usada nas requisições com o `client`.
-typealias HTTPVersion = HTTPClient.Configuration.HTTPVersion
 
 /// Serviço resposável por fazer o scraping dos dados, fazendo as requisições necessárias e o caching dos resultados.
 struct WebScraper {
     // MARK: - Configuração
 
+    /// Configuração global do `WebScraper`.
     struct Configuration {
         /// Avisa se a aplicação está usando versões mais novas do HTTP.
         ///
@@ -57,45 +61,80 @@ struct WebScraper {
         public var cacheDirectory: String = "Cache"
         /// Se o `WebScraper` deve fazer e usar caching dos resultados de scraping.
         public var useCaching: Bool = true
+
+        /// Singleton que mantém a config global.
+        public static var global = Configuration()
     }
 
-    /// Configuração do `WebScraper`.
-    static var configuration = Configuration()
+    /// Controle global de warning, para evitar que ele seja lançado múltiplas vezes.
+    private actor HTTPVersionWarning {
+        /// Versão HTTP usada nas requisições com o `client`.
+        typealias HTTPVersion = HTTPClient.Configuration.HTTPVersion
+
+        /// Se o warning já foi ativado.
+        private var alreadyWarned = false
+
+        /// Se o warning deveria ser feito, considerando a config do app.
+        private func shouldWarn(for version: HTTPVersion) -> Bool {
+            !self.alreadyWarned
+            && Configuration.global.warnAboutHttpVersion
+            && "\(version)" != "\(HTTPVersion.http1Only)"
+        }
+
+        /// Faz o warning com a aplicação, se ainda não foi feito.
+        func warnIfNeeded(on app: Application) {
+            let version = app.http.client.configuration.httpVersion
+
+            if self.shouldWarn(for: version) {
+                app.logger.warning(
+                    """
+                    HTTPClient may be using another HTTP version for requests. This could result in
+                    remoteConnectionClosed for site applications. More details on
+                    https://github.com/swift-server/async-http-client/issues/488.
+                    """,
+                    metadata: [
+                        "Service": "\(Self.self)",
+                        "HTTP Version Configuration": "\(version)"
+                    ]
+                )
+                self.alreadyWarned = true
+            }
+        }
+    }
+
+    /// Controle global de warning, para evitar que ele seja lançado múltiplas vezes.
+    private static var httpVersionWarning = HTTPVersionWarning()
 
     /// A aplicação que está usando o `WebScraper`.
     private let app: Application
-    /// Versão HTTP usada pelo `client` da aplicação.
-    var httpVersion: HTTPVersion {
-        self.app.http.client.configuration.httpVersion
-    }
     /// Logger da aplciação, exportado para uso durante o scraping.
+    @inlinable
     var logger: Logger {
         self.app.logger
+    }
+    /// Configuração global do `WebScraper`.
+    @inlinable
+    var configuration: Configuration {
+        get { Configuration.global }
+        set { Configuration.global = newValue }
     }
 
     /// Incializa `WebScraper` para a aplicação.
     init(app: Application) {
         self.app = app
-
-        if Self.configuration.warnAboutHttpVersion
-            && "\(self.httpVersion)" != "\(HTTPVersion.http1Only)" {
-
-            self.logger.warning(
-                """
-                HTTPClient may be using another HTTP version for requests. This could result in remoteConnectionClosed
-                for site applications. More details on https://github.com/swift-server/async-http-client/issues/488.
-                """,
-                metadata: [
-                    "Service": "\(Self.self)",
-                    "HTTP Version Configuration": "\(self.httpVersion)"
-                ]
-            )
-        }
     }
 }
 
 extension WebScraper {
     // MARK: - Requisições HTTP
+
+    /// Acesso do client da aplicação, mas ativa o warning se necessário.
+    private var client: Client {
+        get async {
+            await Self.httpVersionWarning.warnIfNeeded(on: self.app)
+            return self.app.client
+        }
+    }
 
     /// Faz a requisição e decodificação de um conteúdo da internet.
     @inlinable
@@ -104,7 +143,8 @@ extension WebScraper {
         from url: String,
         using decoder: ContentDecoder? = nil
     ) async throws -> Content {
-        let response = try await self.app.client.get(URI(string: url))
+
+        let response = try await self.client.get(URI(string: url))
         if let decoder = decoder {
             return try response.content.decode(type, using: decoder)
         } else {
@@ -126,9 +166,9 @@ extension WebScraper {
 
     /// Faz o scraping do conteúdo, se necessário. Sempre prefere usar o caching para carregar os dados.
     @inlinable
-    func scrape<Content: WebScrapabl>(_ type: Content.Type = Content.self) async throws -> Content {
-        if Self.configuration.useCaching {
-            if let content = await self.tryLoadJSON(type, from: self.cacheFile(for: type)) {
+    func scrape<Content: WebScrapabl>(_ type: Content.Type = Content.self) async throws -> Content.WebScrapingOutput {
+        if self.configuration.useCaching {
+            if let content = await self.tryLoadJSON(Content.WebScrapingOutput.self, from: self.cacheFile(for: type)) {
                 return content
             }
             // em caso de erro, ignora o cache
@@ -138,10 +178,12 @@ extension WebScraper {
 
     /// Faz o scraping de um conteúdo novo e sobrescreve o arquivo de caching.
     @inlinable
-    func scrapeFresh<Content: WebScrapabl>(_ type: Content.Type = Content.self) async throws -> Content {
+    func scrapeFresh<Content: WebScrapabl>(
+        _ type: Content.Type = Content.self
+    ) async throws -> Content.WebScrapingOutput {
         let content = try await Content.scrape(with: self)
 
-        if Self.configuration.useCaching {
+        if self.configuration.useCaching {
             // faz o salvamento do cache em outra task, sem travar essa
             Task { await self.trySaveJSON(content, at: self.cacheFile(for: type)) }
         }
@@ -203,6 +245,7 @@ extension WebScraper {
             allocator: ByteBufferAllocator(),
             eventLoop: eventLoop
         ).get()
+        try file.close()
 
         let data = content.readData(length: content.readableBytes)
         return try JSONDecoder().decode(type, from: data ?? Data())
@@ -226,7 +269,7 @@ extension WebScraper {
     var cacheDirectory: URL {
         var resources = URL(fileURLWithPath: self.app.directory.resourcesDirectory, isDirectory: true)
         // remove partes como "/" e "." do nome da pasta antes de inserir na URL
-        resources.appendPathComponent(Self.configuration.cacheDirectory.replacingNonAlphaNum(), isDirectory: true)
+        resources.appendPathComponent(self.configuration.cacheDirectory.replacingNonAlphaNum(), isDirectory: true)
         resources.standardize()
         return resources
     }
@@ -290,22 +333,14 @@ extension WebScraper {
             at path: String,
             with contents: Data? = nil,
             with attributes: [FileAttributeKey: Any] = [:],
-            file: String = #file,
-            function: String = #function,
-            line: UInt = #line,
-            column: UInt = #column,
+            source: ErrorSource = .capture(),
             stackTrace: StackTrace? = .capture()
         ) {
             self.path = path
             self.contents = contents
             self.attributes = attributes
 
-            self.source = .init(
-                file: file,
-                function: function,
-                line: line,
-                column: column
-            )
+            self.source = source
             self.stackTrace = stackTrace
         }
 
@@ -324,7 +359,7 @@ extension WebScraper {
         }
 
         var reason: String {
-            "Could not a create file (\(self.contentSize)b) at \(self.path) (unknown reason)."
+            "Could not a create file (\(self.contentSize) bytes) at \(self.path) (unknown reason)."
         }
     }
 }
