@@ -116,7 +116,11 @@ private struct WebScrapingScript {
     /// - Parameter filename: Nome do arquivo com o script,
     ///   possívelmente com uma extensão.
     init(filename: String) {
-        self.init(name: filename.strippedExtension())
+        var components = filename.components(separatedBy: ".")
+        if components.count > 1 {
+            components.removeLast()
+        }
+        self.init(name: components.joined(separator: "."))
     }
 
     /// Remove diretório de saída do script (`buildFolder`), se existir.
@@ -186,7 +190,7 @@ private struct WebScrapingScript {
     ///   com seu valor parseado.
     func parseFiles<T>(with parser: (Data) throws -> T) throws -> [String: T] {
 
-        let parsed = try self.allFiles().concurrentMap { filename -> (String, T) in
+        let parsed = try self.allFiles().map { filename -> (String, T) in
             let contents = try Data(contentsOf: filename)
             let name = filename.deletingPathExtension().lastPathComponent
 

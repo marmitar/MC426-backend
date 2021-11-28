@@ -46,10 +46,16 @@ let package = Package(
             swiftSettings: DefaultSettings.swift
         ),
         // testes do servidor
-        .testTarget(name: "AppTests", dependencies: [
-            .target(name: "App"),
-            .product(name: "XCTVapor", package: "vapor")
-        ])
+        .testTarget(
+            name: "AppTests",
+            dependencies: [
+                .target(name: "App"),
+                .product(name: "XCTVapor", package: "vapor")
+            ],
+            cSettings: DefaultSettings.c,
+            cxxSettings: DefaultSettings.cxx,
+            swiftSettings: DefaultSettings.swift
+        )
     ],
     swiftLanguageVersions: [.v5],
     cLanguageStandard: .gnu2x,

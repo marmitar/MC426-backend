@@ -69,7 +69,7 @@ struct Database<Item: Searchable> {
     /// `Item` não deve conter pesos negativos.
     private static func buildEntries(for data: [Item]) -> [Entry] {
         /// monta cache de cada dado
-        var entries = data.concurrentMap { item in
+        var entries = data.map { item in
             Entry(item, SearchCache<FuzzyField>(for: item))
         }
         // ordena se requisitado
@@ -148,7 +148,7 @@ struct Database<Item: Searchable> {
     ///   e o seu score para a string de busca.
     func search(_ text: String, upTo maxScore: Double) -> [(item: Item, score: Double)] {
         // Prepara o texto que será buscado.
-        let searchText = text.prepareForSearch()
+        let searchText = text.normalized().reducingWhitespace()
         return self.entries.compactMap { (item, cache) in
             let score = cache.fullScore(for: searchText)
 
@@ -174,7 +174,7 @@ struct SearchCache<Provider: ScoreProvider> {
     init<Item: Searchable>(for item: Item) {
         self.fields = Item.properties.map { field in
             // Cria o provedor de score, preparando a string.
-            let fieldScoreProvider = Provider(value: field.get(from: item).prepareForSearch())
+            let fieldScoreProvider = Provider(value: field.get(from: item).normalized().reducingWhitespace())
             return (
                 textValue: fieldScoreProvider,
                 weight: field.weight / Item.totalWeight

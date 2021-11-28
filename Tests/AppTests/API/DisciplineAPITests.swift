@@ -13,14 +13,16 @@ final class DisciplineAPITests: XCTestCase {
     // MARK: - Testes
 
     func testFetchDisciplineWithValidCode() throws {
-        try assertJsonResult(on: url(discipline: "MC102"), matches: [
-            "code": "MC102",
-            "name": "Algoritmos e Programação de Computadores",
-            "syllabus": "Conceitos básicos de organização de computadores."
+        let expectedSyllabus = "Conceitos básicos de organização de computadores."
             + " Construção de algoritmos e sua representação em pseudocódigo e linguagens de alto nível."
             + " Desenvolvimento sistemático e implementação de programas."
             + " Estruturação, depuração, testes e documentação de programas."
-            + " Resolução de problemas.",
+            + " Resolução de problemas."
+
+        try assertJsonResult(on: url(discipline: "MC102"), matches: [
+            "code": "MC102",
+            "name": "Algoritmos e Programação de Computadores",
+            "syllabus": .string(expectedSyllabus),
             "credits": 6,
             "reqBy": [
                 "CV074", "CV632", "EA044", "EA060", "EA869", "EA954",
