@@ -8,7 +8,9 @@ let package = Package(
     ],
     dependencies: [
         // framework para servidores web
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.53.0")
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.53.0"),
+        // parser de HTML para usar no web scraping
+        .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.3.3")
     ],
     targets: [
         // o servidor propriamente
@@ -16,6 +18,7 @@ let package = Package(
             name: "App",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
+                .product(name: "SwiftSoup", package: "SwiftSoup"),
                 .target(name: "RapidFuzz")
             ],
             cSettings: DefaultSettings.c,
@@ -67,10 +70,7 @@ private enum DefaultSettings {
     static let swift: [SwiftSetting] = [
         // Detalhes em https://github.com/swift-server/guides/blob/main/docs/building.md#building-for-production
         .unsafeFlags(
-            [
-                "-Ounchecked", "-remove-runtime-asserts", "-gnone",
-                "-cross-module-optimization", "-whole-module-optimization"
-            ],
+            ["-O", "-remove-runtime-asserts", "-cross-module-optimization", "-whole-module-optimization"],
             .when(configuration: .release)
         ),
         .unsafeFlags(["-Onone", "-g"], .when(configuration: .debug))
