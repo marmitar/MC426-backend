@@ -73,7 +73,9 @@ private enum DefaultSettings {
             ["-O", "-remove-runtime-asserts", "-cross-module-optimization", "-whole-module-optimization"],
             .when(configuration: .release)
         ),
-        .unsafeFlags(["-Onone", "-g"], .when(configuration: .debug))
+        .unsafeFlags(["-Onone", "-g"], .when(configuration: .debug)),
+        // problemas de compilação de código async no linux
+        .unsafeFlags(["-Xfrontend", "-validate-tbd-against-ir=none"], .when(platforms: [.linux], configuration: .debug))
     ]
 
     private static let warnings = [

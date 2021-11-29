@@ -18,12 +18,10 @@ enum ParsingUtils {
     static func parseHTMLSections<Item>(
         _ container: Element?,
         headerTag: String,
-        extractBody: (Element) throws -> Item?,
-        source: ErrorSource = .capture(),
-        stackTrace: StackTrace? = .capture()
+        extractBody: (Element) throws -> Item?
     ) throws -> [String: Item] {
         guard let container = container else {
-            throw ParsingError.missingElement(source: source, stackTrace: stackTrace)
+            throw ParsingError.missingElement()
         }
 
         return Dictionary(uniqueKeysWithValues:
@@ -47,53 +45,57 @@ enum ParsingUtils {
     /// getText(<div>texto</div>) == "texto"
     /// getText("div texto div") == "div texto div"
     /// ```
-    static func getText(
-        from node: Node?,
-        expectedTag: String? = nil,
-        source: ErrorSource = .capture(),
-        stackTrace: StackTrace? = .capture()
-    ) throws -> String {
+    ///
+    /// - Parameter node: nó que terá texto extraído.
+    /// - Parameter expectedTag: se diferente de `nil`, garante que `node.tagName() == expectedTag`.
+    /// - Parameter ignoreChildren: se `false`, checa se o elemento tem algum filho antes de extrair o texto.
+    /// - Returns: texto do elemento.
+    static func getText(from node: Node?, expectedTag: String? = nil, ignoreChildren: Bool = false) throws -> String {
         // garante que o nó é válido, não tem filhos e tem a tag esperada
         guard let node = node else {
-            throw ParsingError.missingElement(source: source, stackTrace: stackTrace)
+            throw ParsingError.missingElement()
         }
-        guard node.childNodeSize() != 0 else {
-            throw ParsingError.nodeHasChildren(node: node, source: source, stackTrace: stackTrace)
-        }
+        let element = node as? Element
         if let expectedTag = expectedTag {
-            guard expectedTag == (node as? Element)?.tagName() ?? "" else {
-                throw ParsingError.unexpectedElementTag(
-                    node: node,
-                    expectedTag: expectedTag,
-                    source: source,
-                    stackTrace: stackTrace
-                )
+            // assume tag vazia para nós genéricos
+            let tagName = element?.tagName() ?? ""
+            guard expectedTag == tagName else {
+                throw ParsingError.unexpectedElementTag(node: node, expectedTag: expectedTag)
+            }
+        }
+        if !ignoreChildren {
+            // conta apenas elementos filhos do elemento, ignorando o texto dele
+            let childCount = element?.children().count ?? node.childNodeSize()
+            guard childCount == 0 else {
+                throw ParsingError.nodeHasChildren(node: node)
             }
         }
 
         // só então extrai o texto
-        if let element = node as? Element {
+        if let element = element {
             return try element.text().reducingWhitespace()
         } else {
             return try node.outerHtml().reducingWhitespace()
         }
     }
 
-    /// Extrai o texto com `getText` e então passa para a função `parser`.
+    /// Extrai o texto com ``getText`` e então passa para a função `parser`.
+
+    /// - Parameter node: nó que terá texto extraído.
+    /// - Parameter expectedTag: se diferente de `nil`, garante que `node.tagName() == expectedTag`.
+    /// - Parameter ignoreChildren: se `false`, checa se o elemento tem algum filho antes de extrair o texto.
+    /// - Parameter parser: função que faz o parsing do texto do elemento.
+    /// - Returns: resultado do parsing do elemento.
     static func parseText<Result>(
         from node: Node?,
         expectedTag: String? = nil,
-        with parser: (String) throws -> Result?,
-        source: ErrorSource = .capture(),
-        stackTrace: StackTrace? = .capture()
+        ignoreChildren: Bool = false,
+        with parser: (String) throws -> Result?
     ) throws -> Result {
-        guard let node = node else {
-            throw ParsingError.missingElement(source: source, stackTrace: stackTrace)
-        }
-
-        let text = try getText(from: node, expectedTag: expectedTag, source: source, stackTrace: stackTrace)
+        let text = try getText(from: node, expectedTag: expectedTag, ignoreChildren: ignoreChildren)
         guard let result = try parser(text) else {
-            throw ParsingError.unparseableText(node: node, type: Result.self, source: source, stackTrace: stackTrace)
+            // SAFETY: getText acusa erro se `node` é `nil`
+            throw ParsingError.unparseableText(node: node!, type: Result.self)
         }
         return result
     }
@@ -121,7 +123,7 @@ struct ParsingError: DebuggableError {
     /// Inicialização geral.
     init(kind: Kind, source: ErrorSource = .capture(), stackTrace: StackTrace? = .capture()) {
         self.kind = kind
-        self.source = .capture()
+        self.source = source
         self.stackTrace = stackTrace
     }
 
@@ -174,7 +176,7 @@ struct ParsingError: DebuggableError {
 
     let stackTrace: StackTrace?
 
-    let source: ErrorSource
+    let source: ErrorSource?
 
     var logLevel: Logger.Level {
         .error
@@ -206,6 +208,7 @@ struct ParsingError: DebuggableError {
         }
     }
 
+    /// Representação textual do nó HTML.
     private static func asHTML(_ node: Node) -> String {
         (try? node.outerHtml()) ?? "[could not be represented]"
     }

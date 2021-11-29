@@ -10,14 +10,14 @@ import Vapor
 
 class ContentController<Content: Matchable> {
 
-    private let conentDB: Database<Content>
+    private let contentDB: Database<Content>
 
     init(entries: [Content], logger: Logger) throws {
-        self.conentDB = try Database(entries: entries, logger: logger)
+        self.contentDB = try Database(entries: entries, logger: logger)
     }
 
     func search(for text: String, limitedTo matches: Int, upTo maxScore: Double) -> [Match] {
-        var results = self.conentDB.search(text, upTo: maxScore)
+        var results = self.contentDB.search(text, upTo: maxScore)
         results.sort(on: { $0.score })
 
         let contentName = Content.contentName
@@ -31,7 +31,7 @@ class ContentController<Content: Matchable> {
         // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
         let text = req.parameters.get("\(field)")!
 
-        if let course = self.conentDB.find(field, equals: text) {
+        if let course = self.contentDB.find(field, equals: text) {
             return course
 
         } else {

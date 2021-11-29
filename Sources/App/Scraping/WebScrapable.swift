@@ -13,6 +13,9 @@ protocol WebScrapabl { // TODO: fix nome
     associatedtype WebScrapingOutput: Codable
 
     /// Faz o scraping do tipo de forma assíncrona usando o `WebScraper` da aplicação.
+    ///
+    /// - Parameter scraper: ``WebScraper`` usado para fazer requisições.
+    /// - Returns: Conteúdo parseado do scraping.
     @inlinable
     static func scrape(with scraper: WebScraper) async throws -> WebScrapingOutput
 }
@@ -25,6 +28,7 @@ extension WebScrapabl {
 }
 
 extension Application {
+    /// Chave para acesso do webscraper da aplicação.
     private enum WebScraperKey: StorageKey {
         typealias Value = WebScraper
     }

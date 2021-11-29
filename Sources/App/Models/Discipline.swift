@@ -38,8 +38,6 @@ extension Discipline: Searchable {
 
     /// Propriedades buscáveis na disciplina.
     enum Properties: SearchableProperty {
-        typealias Of = Discipline
-
         /// Busca por código da disciplina.
         case code
         /// Busca pelo nome da disciplina.
