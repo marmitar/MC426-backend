@@ -28,26 +28,9 @@ extension WebScrapabl {
 }
 
 extension Application {
-    /// Chave para acesso do webscraper da aplicação.
-    private enum WebScraperKey: StorageKey {
-        typealias Value = WebScraper
-    }
-
     /// WebScraper padrão da aplicação.
     var webScraper: WebScraper {
-        get {
-            // faz a inicialização de modo lazy
-            if let scraper = self.storage[WebScraperKey.self] {
-                return scraper
-            } else {
-                let scraper = WebScraper(app: self)
-                self.webScraper = scraper
-                return scraper
-            }
-        }
-        set {
-            self.storage[WebScraperKey.self] = newValue
-        }
+        WebScraper(app: self)
     }
 }
 
@@ -120,7 +103,7 @@ struct WebScraper {
     @inlinable
     var configuration: Configuration {
         get { Configuration.global }
-        set { Configuration.global = newValue }
+        nonmutating set { Configuration.global = newValue }
     }
 
     /// Incializa `WebScraper` para a aplicação.

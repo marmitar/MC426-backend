@@ -4,13 +4,13 @@ func routes(_ app: Application) throws {
     let api = app.grouped("api")
 
     // API: busca textual entre vários elementos.
-    api.get("busca") { req -> Future<[Match]> in
-        return try SearchController.shared.searchFor(req)
+    api.get("busca") { req in
+        try await SearchController.shared.searchFor(req)
     }
 
     // API: dados para a página de uma disciplina
-    api.get("disciplina", ":code") { req -> Discipline in
-        return try Discipline.Controller.shared.fetchDiscipline(req)
+    api.get("disciplina", ":code") { req in
+        try await req.disciplines.fetchDiscipline(req)
     }
 
     // API: dados para a página de um curso

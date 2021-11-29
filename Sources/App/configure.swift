@@ -24,7 +24,7 @@ public func configure(_ app: Application) throws {
         enablePrettyPrintForJSON()
     }
 
-    try initializeControllers(app)
+    initializeControllers(app)
 
     // register routes
     try routes(app)
@@ -39,30 +39,16 @@ private func enablePrettyPrintForJSON() {
     ContentConfiguration.global.use(encoder: encoder, for: .json)
 }
 
-private func initializeControllers(_ app: Application) throws {
+private func initializeControllers(_ app: Application) {
     // Inicia thread para preparar os dados.
     // Pega instância de singleton pela primeira vez para
     // carregar os dados de forma assíncrona.
     // `.shared` é lazy por ser estático, e por isso
     // roda de forma assíncrona abaixo.
-    let disciplines = app.async {
-        Discipline.Controller.shared
+    _ = app.eventLoopGroup.performWithTask {
+        try await app.disciplines
     }
-    let courses = app.async {
+    _ = app.eventLoopGroup.performWithTask {
         Course.Controller.shared
-    }
-    _ = try disciplines.wait()
-    _ = try courses.wait()
-}
-
-extension Application {
-    /// Executa closure assincronamente em `eventLoop`.
-    func async<T>(on eventLoop: EventLoop, run: @escaping () throws -> T) -> Future<T> {
-        self.threadPool.runIfActive(eventLoop: eventLoop, run)
-    }
-
-    /// Executa closure assincronamente.
-    func async<T>(run: @escaping () throws -> T) -> Future<T> {
-        self.async(on: self.eventLoopGroup.next(), run: run)
     }
 }
