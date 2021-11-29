@@ -2,34 +2,29 @@ import Foundation
 import Vapor
 
 /// Representação de uma matéria.
-struct Discipline: Content {
+struct Discipline: Content, Hashable {
     /// Código da disciplina.
     let code: String
     /// Nome da disciplina.
     let name: String
     /// Número de créditos.
-    let credits: Int
+    let credits: UInt
     /// Grupos de requisitos da disciplina.
-    let reqs: [[Requirement]]?
+    let reqs: Set<Set<Requirement>>
     /// Disciplina que tem essa como requisito.
-    let reqBy: [String]?
+    let reqBy: Set<String>
     /// Ementa da disciplina.
     let syllabus: String
-}
 
-/// Requisito de uma disciplina.
-struct Requirement: Content {
-    /// Código de requisito.
-    let code: String
-    /// Se o requisito é parcial.
-    let partial: Bool?
-    /// Se o requisito não é uma disciplina propriamente.
-    let special: Bool?
-}
-
-extension Discipline: WebScrapable {
-    static let scriptName = "disciplines.py"
-    typealias Output = [Self]
+    /// Requisito de uma disciplina.
+    struct Requirement: Content, Hashable {
+        /// Código de requisito.
+        let code: String
+        /// Se o requisito é parcial.
+        let partial: Bool
+        /// Se o requisito não é uma disciplina propriamente.
+        let special: Bool
+    }
 }
 
 extension Discipline: Searchable {

@@ -52,6 +52,21 @@ extension Sequence {
             }
         }
     }
+
+    /// Similar ao ``Sequence.map``, mas encerra o mapeamento antes se algum elemento retorna `nil`.
+    ///
+    /// - Returns: toda sequência mapeada ou `nil` se algum mapeamento não for possível.
+    func tryMap<Transformed>(_ transform: (Element) throws -> Transformed?) rethrows -> [Transformed]? {
+        var transformed: [Transformed] = []
+
+        for element in self {
+            guard let result = try transform(element) else {
+                return nil
+            }
+            transformed.append(result)
+        }
+        return transformed
+    }
 }
 
 extension MutableCollection where Self: RandomAccessCollection {
