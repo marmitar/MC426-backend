@@ -1,0 +1,69 @@
+stages:
+  - prepare
+  - build
+  - test
+  - image
+
+variables:
+  GIT_DEPTH: "5"
+
+default:
+  image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
+  needs:
+    pipeline: disciplinas1/mc426/projeto
+  cache:
+    key: build-folder
+    paths:
+      - .build
+
+prepare swift packages:
+  stage: prepare
+  script:
+    - swift package resolve
+  only:
+    changes:
+      - Package.swift
+      - Package.resolved
+
+build release:
+  stage: build
+  script:
+    - swift build -c release
+  needs: ["prepare swift packages"]
+
+build debug:
+  stage: build
+  script:
+    - swift build -c debug
+  needs: ["prepare swift packages"]
+
+test case:
+  stage: test
+  parallel:
+    - CONFIG: [release, debug]
+      TESTCASE:
+        - AppTests.CourseAPITests
+        - AppTests.DisciplineAPITests
+        - AppTests.SearchAPITests
+        - AppTests.ExtensionAPITests
+  script:
+    - LOG_LEVEL=debug swift test -c $CONFIG --filter $TESTCASE
+  cache:
+    policy: pull
+  needs: ["build $CONFIG"]
+
+build server image:
+  tags:
+    - docker
+  stage: image
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY/disciplinas1/mc426/backend/base:latest . \
+      --build-arg EXECUTABLE="$(swift build --package-path /build -c release --show-bin-path)/Run"
+    - docker push $CI_REGISTRY/disciplinas1/mc426/backend/base:latest
+  cache:
+    policy: pull
+  needs: ["build release"]
