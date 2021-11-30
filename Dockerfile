@@ -1,5 +1,4 @@
 FROM swift:5.5.1-focal-slim as server
-ARG EXECUTABLE
 
 # Install OS updates, python3 and NodeJS
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
@@ -15,6 +14,7 @@ RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app
 WORKDIR /app
 
 # Copy built executable and any staged resources from builder
+ARG EXECUTABLE
 COPY --chown=vapor:vapor $EXECUTABLE /app/Run
 COPY --chown=vapor:vapor ./Scraping /app/Scraping
 

@@ -23,24 +23,15 @@ build release:
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   script:
     - swift build -c release
+    - cp "$(swift build -c release --show-bin-path)/Run" Run
   cache:
     key: build-folder
     paths:
       - .build
+      - Run
   needs: ["prepare packages"]
 
-build debug:
-  stage: build
-  image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
-  script:
-    - swift build -c debug
-  cache:
-    key: build-folder
-    paths:
-      - .build
-  needs: ["prepare packages"]
-
-test release:
+test release version:
   stage: test
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   script:
@@ -52,17 +43,18 @@ test release:
     policy: pull
   needs: ["build release"]
 
-test debug:
+build and test debug version:
   stage: test
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   script:
+    - swift build -c debug
     - LOG_LEVEL=debug swift test -c debug
   cache:
     key: build-folder
     paths:
       - .build
     policy: pull
-  needs: ["build debug"]
+  needs: ["prepare packages"]
 
 build server image:
   stage: image
@@ -73,12 +65,12 @@ build server image:
     - docker:dind
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - cp "$(swift build -c release --show-bin-path)/Run" "$PWD/Run"
-    - docker build -t $CI_REGISTRY/disciplinas1/mc426/backend/server:latest --build-arg EXECUTABLE="$PWD/Run"  .
+    - docker build -t $CI_REGISTRY/disciplinas1/mc426/backend/server:latest --build-arg EXECUTABLE=./Run .
     - docker push $CI_REGISTRY/disciplinas1/mc426/backend/server:latest
   cache:
     key: build-folder
     paths:
       - .build
+      - Run
     policy: pull
   needs: ["build release"]
