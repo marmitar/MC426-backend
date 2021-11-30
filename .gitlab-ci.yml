@@ -8,7 +8,7 @@ variables:
   GIT_DEPTH: 5
   GIT_SUBMODULE_STRATEGY: recursive
 
-prepare swift packages:
+prepare packages:
   stage: prepare
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   script:
@@ -27,7 +27,7 @@ build release:
     key: build-folder
     paths:
       - .build
-  needs: ["prepare swift packages"]
+  needs: ["prepare packages"]
 
 build debug:
   stage: build
@@ -38,35 +38,30 @@ build debug:
     key: build-folder
     paths:
       - .build
-  needs: ["prepare swift packages"]
+  needs: ["prepare packages"]
 
-.test config:
+test release:
   stage: test
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
-  parallel: 3
   script:
-    - |
-      case $CI_NODE_INDEX in
-        1) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.CourseAPITests     ;;
-        2) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.DisciplineAPITests ;;
-        3) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.SearchAPITests     ;;
-      esac
+    - LOG_LEVEL=debug swift test -c release
   cache:
     key: build-folder
     paths:
       - .build
     policy: pull
-
-test release:
-  extends: .test config
-  variables:
-    CONFIG: release
   needs: ["build release"]
 
 test debug:
-  extends: .test config
-  variables:
-    CONFIG: debug
+  stage: test
+  image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
+  script:
+    - LOG_LEVEL=debug swift test -c debug
+  cache:
+    key: build-folder
+    paths:
+      - .build
+    policy: pull
   needs: ["build debug"]
 
 build server image:
