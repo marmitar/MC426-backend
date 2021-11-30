@@ -6,7 +6,7 @@ RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
     && apt-get -q dist-upgrade -y \
     && apt-get -q install -y python3 python3-requests python3-bs4 \
-    && apt-get --purge remove -y .\*-doc$ && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Create a vapor user and group with /app as its home directory
 RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app vapor
@@ -15,7 +15,8 @@ RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app
 WORKDIR /app
 
 # Copy built executable and any staged resources from builder
-COPY --chown=vapor:vapor $EXECUTABLE /app
+COPY --chown=vapor:vapor $EXECUTABLE /app/Run
+COPY --chown=vapor:vapor ./Scraping /app/Scraping
 
 # Ensure all further commands run as the vapor user
 USER vapor:vapor
