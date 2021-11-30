@@ -45,12 +45,13 @@ build debug:
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   parallel: 4
   script:
-    - case $CI_NODE_INDEX in
-    -   1) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.CourseAPITests;;
-    -   2) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.DisciplineAPITests;;
-    -   3) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.SearchAPITests;;
-    -   4) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.ExtensionAPITests;;
-    - esac
+    - |
+      case $CI_NODE_INDEX in
+        1) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.CourseAPITests     ;;
+        2) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.DisciplineAPITests ;;
+        3) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.SearchAPITests     ;;
+        4) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.ExtensionsTests    ;;
+      esac
   cache:
     key: build-folder
     paths:
@@ -78,8 +79,9 @@ build server image:
     - docker:dind
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CI_REGISTRY/disciplinas1/mc426/backend/base:latest . \
-      --build-arg EXECUTABLE="$(swift build --package-path /build -c release --show-bin-path)/Run"
+    - |
+      docker build --build-arg EXECUTABLE="$(swift build --package-path /build -c release --show-bin-path)/Run" \
+        -t $CI_REGISTRY/disciplinas1/mc426/backend/base:latest .
     - docker push $CI_REGISTRY/disciplinas1/mc426/backend/base:latest
   cache:
     key: build-folder
