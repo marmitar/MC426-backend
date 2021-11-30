@@ -5,58 +5,74 @@ stages:
   - image
 
 variables:
-  GIT_DEPTH: "5"
+  GIT_DEPTH: 5
 
-default:
+prepare swift packages:
+  stage: prepare
   image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
-  needs:
-    pipeline: disciplinas1/mc426/projeto
+  script:
+    - swift package resolve
   cache:
     key: build-folder
     paths:
       - .build
 
-prepare swift packages:
-  stage: prepare
-  script:
-    - swift package resolve
-  only:
-    changes:
-      - Package.swift
-      - Package.resolved
-
 build release:
   stage: build
+  image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   script:
     - swift build -c release
+  cache:
+    key: build-folder
+    paths:
+      - .build
   needs: ["prepare swift packages"]
 
 build debug:
   stage: build
+  image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
   script:
     - swift build -c debug
+  cache:
+    key: build-folder
+    paths:
+      - .build
   needs: ["prepare swift packages"]
 
-test case:
+.test config:
   stage: test
-  parallel:
-    - CONFIG: [release, debug]
-      TESTCASE:
-        - AppTests.CourseAPITests
-        - AppTests.DisciplineAPITests
-        - AppTests.SearchAPITests
-        - AppTests.ExtensionAPITests
+  image: $CI_REGISTRY/disciplinas1/mc426/projeto/base:latest
+  parallel: 4
   script:
-    - LOG_LEVEL=debug swift test -c $CONFIG --filter $TESTCASE
+    - case $CI_NODE_INDEX in
+    -   1) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.CourseAPITests;;
+    -   2) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.DisciplineAPITests;;
+    -   3) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.SearchAPITests;;
+    -   4) LOG_LEVEL=debug swift test -c $CONFIG --filter AppTests.ExtensionAPITests;;
+    - esac
   cache:
+    key: build-folder
+    paths:
+      - .build
     policy: pull
-  needs: ["build $CONFIG"]
+
+test release:
+  extends: .test config
+  variables:
+    CONFIG: release
+  needs: ["build release"]
+
+test debug:
+  extends: .test config
+  variables:
+    CONFIG: debug
+  needs: ["build debug"]
 
 build server image:
-  tags:
-    - docker
   stage: image
   image: docker:latest
+  tags:
+    - docker
   services:
     - docker:dind
   script:
@@ -65,5 +81,8 @@ build server image:
       --build-arg EXECUTABLE="$(swift build --package-path /build -c release --show-bin-path)/Run"
     - docker push $CI_REGISTRY/disciplinas1/mc426/backend/base:latest
   cache:
+    key: build-folder
+    paths:
+      - .build
     policy: pull
   needs: ["build release"]
