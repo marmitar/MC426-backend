@@ -1,5 +1,8 @@
 FROM swift:5.5.1-focal-slim as server
 
+# Create a vapor user and group with /app as its home directory
+RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app vapor
+
 # Install OS updates, python3 and NodeJS
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
@@ -7,16 +10,13 @@ RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q install -y python3 python3-requests python3-bs4 \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a vapor user and group with /app as its home directory
-RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app vapor
-
 # Switch to the new home directory
 WORKDIR /app
 
 # Copy built executable and any staged resources from builder
-ARG EXECUTABLE
-COPY --chown=vapor:vapor $EXECUTABLE /app/Run
+COPY --chown=vapor:vapor ./Run /app/Run
 COPY --chown=vapor:vapor ./Scraping /app/Scraping
+COPY --chown=vapor:vapor ./ScrapingCache /app/.build/scraping
 
 # Ensure all further commands run as the vapor user
 USER vapor:vapor
