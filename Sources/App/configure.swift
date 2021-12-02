@@ -8,6 +8,7 @@ typealias Future<T> = EventLoopFuture<T>
 // configures your application
 public func configure(_ app: Application) throws {
     app.http.server.configuration.serverName = "Planejador de Disciplinas"
+    app.http.server.configuration.hostname = "0.0.0.0"
     // serve files from /Public folder
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
