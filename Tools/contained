@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Rebuild image and redo the container.
+function reset {
+    ROOT=$(git rev-parse --show-toplevel)
+    # avoid redownloading swiftlint and oh-my-zsh
+    if [ ! -f $ROOT/Tools/swiftlint ]; then
+        wget -O swiftlint.zip https://github.com/realm/SwiftLint/releases/latest/download/swiftlint_linux.zip
+        unzip ./swiftlint.zip swiftlint
+        rm swiftlint.zip
+        chmod +rx swiftlint
+        mv swiftlint $ROOT/Tools/swiftlint
+    fi
+    if [ ! -f $ROOT/Tools/oh-my-zsh.sh ]; then
+        wget -O oh-my-zsh.sh https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        mv oh-my-zsh.sh $ROOT/Tools/oh-my-zsh.sh
+    fi
+
+    # build docker at git root
+    CURRENT_DIR=$PWD && cd $ROOT/Tools
+    docker build -t swift-planejador -f $ROOT/Tools/Dockerfile .
+    cd $CURRENT_DIR
+    docker rm -f planejador
+
+    # create container with binds for every folder/file, except '.build'
+    BINDS=$(ls $ROOT | grep -vF '.build' | awk '{print "--mount type=bind,source='$ROOT'/"$1",destination=/app/"$1}')
+    docker create --expose 8080 -p 8080:8080 -it -w /app $BINDS --name planejador swift-planejador
+    docker start planejador
+}
+
+# Run the current container
+function run {
+    docker exec -it planejador ${@:-/bin/zsh}
+}
+
+# When the special option "--reset" is given, rebuild everything
+ARGUMENTS=($@)
+case "$1" in
+    "--reset")
+        reset
+        run ${ARGUMENTS[@]:1}
+        ;;
+    *)
+        run ${ARGUMENTS[@]}
+        ;;
+esac
