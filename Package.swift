@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "BackendProject",
     platforms: [
-       .macOS(.v11)
+       .macOS(.v12)
     ],
     dependencies: [
         // framework para servidores web
@@ -21,9 +21,9 @@ let package = Package(
                 .product(name: "SwiftSoup", package: "SwiftSoup"),
                 .target(name: "RapidFuzz")
             ],
-            cSettings: DefaultSettings.c,
-            cxxSettings: DefaultSettings.cxx,
-            swiftSettings: DefaultSettings.swift
+            cSettings: Settings.c,
+            cxxSettings: Settings.cxx,
+            swiftSettings: Settings.swift
         ),
         // executável que inicializa o servidor
         .executableTarget(
@@ -31,22 +31,22 @@ let package = Package(
             dependencies: [
                 .target(name: "App")
             ],
-            cSettings: DefaultSettings.c,
-            cxxSettings: DefaultSettings.cxx,
-            swiftSettings: DefaultSettings.swift
+            cSettings: Settings.c,
+            cxxSettings: Settings.cxx,
+            swiftSettings: Settings.swift
         ),
         // integração com RapidFuzz
         .target(
             name: "RapidFuzz",
             exclude: ["rapidfuzz-cpp"],
-            cSettings: DefaultSettings.c,
-            cxxSettings: DefaultSettings.cxx + [
+            cSettings: Settings.c,
+            cxxSettings: Settings.cxx + [
                 .headerSearchPath("rapidfuzz-cpp"),
                 // Modo de cálculo do score, usando uma das classes em
                 // https://github.com/maxbachmann/rapidfuzz-cpp#readme
                 .define("RATIO_TYPE", to: "CachedPartialRatio")
             ],
-            swiftSettings: DefaultSettings.swift
+            swiftSettings: Settings.swift
         ),
         // testes do servidor
         .testTarget(
@@ -55,9 +55,10 @@ let package = Package(
                 .target(name: "App"),
                 .product(name: "XCTVapor", package: "vapor")
             ],
-            cSettings: DefaultSettings.c,
-            cxxSettings: DefaultSettings.cxx,
-            swiftSettings: DefaultSettings.swift
+            // habilita warnings e erros de C/C++
+            cSettings: Settings.c + [.unsafeFlags(Settings.warnings)],
+            cxxSettings: Settings.cxx + [.unsafeFlags(Settings.warnings)],
+            swiftSettings: Settings.swift
         )
     ],
     swiftLanguageVersions: [.v5],
@@ -65,12 +66,15 @@ let package = Package(
     cxxLanguageStandard: .gnucxx20
 )
 
-/// COnfigurações padrões de cada linguagem.
-private enum DefaultSettings {
+/// Configurações padrões de cada linguagem.
+private enum Settings {
     static let swift: [SwiftSetting] = [
         // Detalhes em https://github.com/swift-server/guides/blob/main/docs/building.md#building-for-production
         .unsafeFlags(
-            ["-O", "-remove-runtime-asserts", "-cross-module-optimization", "-whole-module-optimization"],
+            [
+                "-Ounchecked", "-remove-runtime-asserts",
+                "-cross-module-optimization", "-whole-module-optimization"
+            ],
             .when(configuration: .release)
         ),
         .unsafeFlags(["-Onone", "-g"], .when(configuration: .debug)),
@@ -78,33 +82,27 @@ private enum DefaultSettings {
         .unsafeFlags(["-Xfrontend", "-validate-tbd-against-ir=none"], .when(platforms: [.linux], configuration: .debug))
     ]
 
-    private static let warnings = [
-        "-Wall", "-Wextra", "-Wpedantic"
-    ]
-    private static let optimizationFlags = [
-        "-O3", "-march=native", "-mtune=native", "-pipe", "-fno-plt",
-        "-ffast-math", "-fshort-enums", "-fno-exceptions"
-    ]
-    private static let debugFlags = ["-O1", "-ggdb3"]
-
     static let cxx: [CXXSetting] = [
-        // habilita warnings e errors
-        .unsafeFlags(warnings),
-        .define("_FORTIFY_SOURCE", to: "1"),
+        // flags básicas de depuração e otimização
         .unsafeFlags(debugFlags, .when(configuration: .debug)),
-        // flags de otimização
         .define("NDEBUG", .when(configuration: .release)),
         .unsafeFlags(optimizationFlags, .when(configuration: .release))
     ]
 
     // swiftlint:disable identifier_name
     static let c: [CSetting] = [
-        // habilita warnings e errors
-        .unsafeFlags(warnings),
-        .define("_FORTIFY_SOURCE", to: "1"),
+        // flags básicas de depuração e otimização
         .unsafeFlags(debugFlags, .when(configuration: .debug)),
-        // flags de otimização
         .define("NDEBUG", .when(configuration: .release)),
         .unsafeFlags(optimizationFlags, .when(configuration: .release))
     ]
+
+    static let optimizationFlags = [
+        "-O3", "-march=native", "-mtune=native", "-pipe",
+        "-fno-plt", "-fno-exceptions",
+        "-ffast-math", "-fshort-enums"
+    ]
+    static let debugFlags = ["-O1", "-ggdb3"]
+    // warnings não são ativados por padrão por conta das bibliotecas NIO
+    static let warnings = ["-Wall", "-Wextra", "-Wpedantic"]
 }
