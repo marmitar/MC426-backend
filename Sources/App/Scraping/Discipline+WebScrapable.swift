@@ -8,7 +8,6 @@ extension Discipline: WebScrapabl {
     static func scrape(with scraper: WebScraper) async throws -> [Discipline] {
         // carrega e parseia o índice
         let index = try await scraper.getHTML(from: indexURL)
-
         return try await scrapeIndex(page: index, with: scraper)
     }
 

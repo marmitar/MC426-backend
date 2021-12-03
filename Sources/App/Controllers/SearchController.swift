@@ -19,9 +19,9 @@ internal struct SearchController {
         let limit: Int?
 
         /// Limite de busca usado quando não especificado.
-        private static let defaultSearchLimit = 100
+        static let defaultSearchLimit = 100
         /// Limite máximo de busca.
-        private static let maxSearchLimit = 1000
+        static let maxSearchLimit = 1000
 
         var searchLimit: Int {
             min(self.limit ?? Self.defaultSearchLimit, Self.maxSearchLimit)

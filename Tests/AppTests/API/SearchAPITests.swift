@@ -48,13 +48,16 @@ final class SearchAPITests: XCTestCase {
     }
 
     func testSearchWithValidDisciplineCodeAndLimit() throws {
-        let limit = SearchController.maxSearchLimit - 1
+        let limit = SearchController.SearchParams.maxSearchLimit - 1
         try assertJsonSize(on: url(search: "mc102", limit: "\(limit)"), size: limit)
     }
 
     func testSearchWithValidDisciplineCodeAndHugeLimit() throws {
-        let limit = SearchController.maxSearchLimit + 1
-        try assertJsonSize(on: url(search: "mc102", limit: "\(limit)"), size: SearchController.maxSearchLimit)
+        let limit = SearchController.SearchParams.maxSearchLimit + 1
+        try assertJsonSize(
+            on: url(search: "mc102", limit: "\(limit)"),
+            size: SearchController.SearchParams.maxSearchLimit
+        )
     }
 
     // MARK: - Testes Qualitativos
