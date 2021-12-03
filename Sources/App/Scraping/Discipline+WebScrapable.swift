@@ -5,6 +5,8 @@ import SwiftSoup
 private let indexURL = "https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/disciplinas/index.html"
 
 extension Discipline: WebScrapabl {
+    // MARK: - Scraping de disciplinas.
+
     static func scrape(with scraper: WebScraper) async throws -> [Discipline] {
         // carrega e parseia o índice
         let index = try await scraper.getHTML(from: indexURL)
@@ -30,33 +32,34 @@ extension Discipline: WebScrapabl {
         let headers = try page.getElementsByAttributeValueMatching("id", "^disc-..[0-9][0-9][0-9]$")
 
         return try headers.compactMap { header in
-            try parseDiscipline(header)
+            try parseDiscipline(from: header)
         }
     }
 
-    // MARK: - Parsing
+    // MARK: - Parsing da disciplina.
 
-    /// Parser de uma disciplina a partir do seu header (elemento com id 'disc-CÓDIGO').
+    /// Parser de uma disciplina a partir do seu header (elemento com id 'disc-$CÓDIGO').
     ///
-    /// Assume todos os pré-requisitos como especiais e não faz tratamento do campo `reqBy`.
-    private static func parseDiscipline(_ header: Element) throws -> Discipline {
+    /// - important: Assume todos os pré-requisitos como especiais e não faz tratamento do campo `reqBy`.
+    /// - throws: Se o elemento não pode ser entendido como uma disciplina.
+    private static func parseDiscipline(from header: Element) throws -> Discipline {
         let (code, name) = try ParsingUtils.parseText(from: header, expectedTag: "h2") { try parseHeader(in: $0) }
 
         // as seções da disciplina são feitas por um <h3> (titulo da seção) seguido de
         // um <p> ou <div> (corpo da seção), que deve vir logo após o elemento
-        let sections = try ParsingUtils.parseHTMLSections(header.parent(), headerTag: "h3") {
-            try $0.nextElementSibling()
+        let sections = try ParsingUtils.parseHTMLSections(header.parent(), headerTag: "h3") { sectionHeader in
+            try sectionHeader.nextElementSibling()
         }
         // a ementa é o texto de uma seção com título "Ementa"
         let syllabus = try ParsingUtils.getText(from: sections["Ementa"], ignoreChildren: true)
         // a carga horária é um pouco diferente, as seções tem como título um <strong>, mas o conteúdo fica
         // perdido dentro do elemento pai, e precisa ser acessado como um nó com apenas texto
-        let workload = try ParsingUtils.parseHTMLSections(sections["Carga Horária"], headerTag: "strong") {
-            $0.nextSibling()
+        let workload = try ParsingUtils.parseHTMLSections(sections["Carga Horária"], headerTag: "strong") { header in
+            header.nextSibling()
         }
         // um nó (que não é elemento) tem tag vazia
         let credits = try ParsingUtils.parseText(from: workload["Total de Créditos:"], expectedTag: "") { UInt($0) }
-        //
+        // os pré-requisitos são extraído de um texto simples (não da formatação do HTML)
         let reqs = try ParsingUtils.parseText(from: sections["Pré-requisitos"], expectedTag: "p") {
             try parseAllRequirements(in: $0)
         }
@@ -64,25 +67,29 @@ extension Discipline: WebScrapabl {
         return Discipline(code: code, name: name, credits: credits, reqs: reqs, reqBy: Set(), syllabus: syllabus)
     }
 
-    /// Parser do texto do header (`<h2 id="disc-XX000">`) de uma discplina, que apenas divide o texto em torno do "-".
+    /// Parser do texto do header (`<h2 id="disc-XX000">`) de uma discplina.
     ///
-    /// Espera que o texto esteja no formato 'CÓDIGO - Nome', senão retorna `nil`.
+    /// - Parameter text: Texto no formato `'$CÓDIGO - $Nome'`.
+    /// - Returns: Uma tupla `($CÓDIGO, $Nome)` ou `nil` se o texto está em outro formato.
     private static func parseHeader(in text: String) throws -> (code: String, name: String)? {
         let parts = text.split(separator: "-", maxSplits: 1, omittingEmptySubsequences: true)
         guard
-            let code = parts.get(at: 0)?.reducingWhitespace(),
+            let uncheckedCode = parts.get(at: 0)?.reducingWhitespace(),
             // use parseRequirement para garantir que o código é válido
-            let validCode = try parseRequirement(in: code)?.code,
+            let code = try parseCode(in: uncheckedCode),
             let name = parts.get(at: 1)?.reducingWhitespace()
         else {
             return nil
         }
-        return (validCode, name)
+        return (code, name)
     }
 
-    /// Parser da seção de pré-requisitos, que aceita o texto padrão quando não existe requisito ou o texto de
-    /// requisitos no formato `GRUPO (ou GRUPO)...` em que `GRUPO` tem o formato `CODIGO(+CODIGO)...` e o
-    /// código é aceito por ``parseRequirement``.
+    /// Parser da seção de pré-requisitos, que aceita
+    ///
+    /// - Parameter text: O texto padrão quando não existe requisito ou o texto de requisitos no formato
+    ///     `$GRUPO (ou $GRUPO)...` em que `$GRUPO` tem o formato `$CODIGO(+$CODIGO)...` e o código é aceito
+    ///      por ``parseRequirement``.
+    /// - Returns: Um conjunto de grupos de requisitos ou `nil` se o texto está em outro formato.
     private static func parseAllRequirements(in text: String) throws -> Set<Set<Requirement>>? {
         guard text.reducingWhitespace() != "Não há pré-requisitos para essa disciplina" else {
             return Set()
@@ -95,12 +102,12 @@ extension Discipline: WebScrapabl {
         }
     }
 
-    /// Parser de um grupo textual no formato `ITEM (sep ITEM)...`.
+    /// Parser de um grupo textual.
     ///
-    /// Parameter text: texto a ser parseado.
-    /// Parameter separator: o separador de elementos do grupo (`sep`).
-    /// Parameter parser: função que faz o parsing de cada item do grupo.
-    /// Returns: conjunto dos itens do grupo.
+    /// - parameter text: Texto no formato `$ITEM ($sep $ITEM)...`.
+    /// - parameter separator: O separador de elementos do grupo (`$sep`).
+    /// - parameter parser: Função que faz o parsing de cada item do grupo.
+    /// - returns: Conjunto dos itens do grupo.
     private static func parseTextualGroup<Item: Hashable>(
         in text: String,
         separatedBy separator: String,
@@ -114,25 +121,37 @@ extension Discipline: WebScrapabl {
 
     /// Regex que dá match com código de disciplinas e opcionalmente o marcador `*` de pré-requisito parcial.
     private static let disciplineCodeRegex = Result {
-        try NSRegularExpression(pattern: "^(\\*?)([A-Z][A-Z ][0-9][0-9][0-9])$")
+        try RegularExpression(pattern: "^(\\*?)([A-Z][A-Z ][0-9][0-9][0-9])$")
     }
 
-    /// Parser de um pré-requisito de disciplina, no formato `XX000` ou `*XX000`.
+    /// Parser de um pré-requisito de disciplina.
     ///
-    /// Assume que o código é especial, para ser corrigido depois.
+    /// - parameter text: Texto no formato `XX000` ou `*XX000`.
+    /// - returns: Pré-requisito de uma disciplina.
+    /// - throws: Problemas com a ``disciplineCodeRegex``.
+    /// - important: Assume que o código é especial, para ser corrigido depois.
     private static func parseRequirement(in text: String) throws -> Requirement? {
-        let range = NSRange(location: 0, length: text.utf8.count)
         guard
-            let matches = try disciplineCodeRegex.get().firstMatch(in: text, range: range),
-            matches.numberOfRanges >= 3,
-            let rangePartial = Range(matches.range(at: 1), in: text),
-            let rangeCode = Range(matches.range(at: 2), in: text)
+            let matches = try disciplineCodeRegex.get().firstMatch(in: text)?.groups,
+            let partialMarker = matches.get(at: 0),
+            let code = matches.get(at: 1)
         else {
             return nil
         }
-        let partialMarker = text[rangePartial]
-        let code = text[rangeCode]
-
         return Requirement(code: String(code), partial: !partialMarker.isEmpty, special: true)
+    }
+
+    /// Parser de um código de disciplina.
+    ///
+    /// - parameter text: Texto no formato `XX000`.
+    /// - returns: O mesmo código, caso seja válido.
+    static func parseCode(in text: String) throws -> String? {
+        try parseRequirement(in: text).flatMap { requirement in
+            if requirement.partial || requirement.special {
+                return nil
+            } else {
+                return requirement.code
+            }
+        }
     }
 }

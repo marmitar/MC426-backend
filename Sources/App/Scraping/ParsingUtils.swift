@@ -80,7 +80,7 @@ enum ParsingUtils {
     }
 
     /// Extrai o texto com ``getText`` e então passa para a função `parser`.
-
+    ///
     /// - Parameter node: nó que terá texto extraído.
     /// - Parameter expectedTag: se diferente de `nil`, garante que `node.tagName() == expectedTag`.
     /// - Parameter ignoreChildren: se `false`, checa se o elemento tem algum filho antes de extrair o texto.
@@ -99,6 +99,22 @@ enum ParsingUtils {
         }
         return result
     }
+
+    /// Extrai o primeiro nó de uma lista de nós, garantindo que ele é o único da lista.
+    static func unwrapSingleElement<Nodes: Sequence>(
+        _ nodes: Nodes?
+    ) throws -> Nodes.Element where Nodes.Element: Node {
+        guard
+            var iterator = nodes?.makeIterator(),
+            let first = iterator.next()
+        else {
+            throw ParsingError.missingElement()
+        }
+        guard iterator.next() == nil else {
+            throw ParsingError.sequenceHasMoreThanOneElement(nodes: Array(nodes!))
+        }
+        return first
+    }
 }
 
 /// Errors gerados em `ParsingUtils`.
@@ -115,6 +131,8 @@ struct ParsingError: DebuggableError {
         case nodeHasChildren(node: Node)
         /// Texto extraído do HTML não pôde ser parseado.
         case unparseableText(node: Node, type: Any.Type)
+        /// Sequência deveria ter um único nó, mas tem mais de um.
+        case sequenceHasMoreThanOneElement(nodes: [Node])
     }
 
     /// Tipo do erro.
@@ -172,6 +190,16 @@ struct ParsingError: DebuggableError {
         ParsingError(kind: .unparseableText(node: node, type: type), source: source, stackTrace: stackTrace)
     }
 
+    /// Sequência deveria ter um único nó, mas tem mais de um.
+    static func sequenceHasMoreThanOneElement(
+        nodes: [Node],
+        source: ErrorSource = .capture(),
+        stackTrace: StackTrace? = .capture()
+    ) -> Self {
+
+        ParsingError(kind: .sequenceHasMoreThanOneElement(nodes: nodes), source: source, stackTrace: stackTrace)
+    }
+
     // MARK: - DebuggableError
 
     let stackTrace: StackTrace?
@@ -192,6 +220,8 @@ struct ParsingError: DebuggableError {
                 return "unexpectedElementTag"
             case .unparseableText:
                 return "unparseableText"
+            case .sequenceHasMoreThanOneElement:
+                return "sequenceHasMoreThanOneElement"
         }
     }
 
@@ -205,6 +235,9 @@ struct ParsingError: DebuggableError {
                 return "An HTML Element did not have the expected tag (\(tag)): \(Self.asHTML(node))"
             case .unparseableText(let node, let type):
                 return "The text content of HTML element could not be parsed as \(type): \(Self.asHTML(node))"
+            case .sequenceHasMoreThanOneElement(let nodes):
+                let nodesString = nodes.map { Self.asHTML($0) }.joined(separator: ", ")
+                return "Sequence expected to have a single element, has more than one: [\(nodesString)]"
         }
     }
 
