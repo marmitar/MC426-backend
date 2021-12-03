@@ -31,7 +31,7 @@ extension Course {
             try fetchContent(on: .code, req)
         }
 
-        func fetchCourseTree(_ req: Request) throws -> CourseTree {
+        func fetchCourseTree(_ req: Request) throws -> Course.Tree {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let variant = req.parameters.get("variant")!
 
@@ -39,7 +39,7 @@ extension Course {
 
             guard
                 let index = Int(variant),
-                let tree = course.getTree(forIndex: index)
+                let tree = course.trees.get(at: index)
             else {
                 throw Abort(.notFound)
             }

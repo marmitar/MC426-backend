@@ -19,7 +19,7 @@ func routes(_ app: Application) throws {
     }
 
     // API: dados para a página de árvore do curso
-    api.get("curso", ":code", ":variant") { req -> CourseTree in
+    api.get("curso", ":code", ":variant") { req -> Course.Tree in
         return try Course.Controller.shared.fetchCourseTree(req)
     }
 }
