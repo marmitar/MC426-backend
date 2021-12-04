@@ -16,7 +16,7 @@ struct RegularExpression {
 
     /// Todas as regiões de match em `text`.
     func matches(in text: String) -> [Match] {
-        let matchRange = NSRange(location: 0, length: text.utf8.count)
+        let matchRange = NSRange(location: 0, length: text.utf16.count)
         let results = self.regex.matches(in: text, range: matchRange)
 
         return results.compactMap { result in Match(result, in: text) }
@@ -24,7 +24,7 @@ struct RegularExpression {
 
     /// Apenas a primeira região de match em `text`.
     func firstMatch(in text: String) -> Match? {
-        let matchRange = NSRange(location: 0, length: text.utf8.count)
+        let matchRange = NSRange(location: 0, length: text.utf16.count)
         let result = self.regex.firstMatch(in: text, range: matchRange)
 
         return result.flatMap { result in Match(result, in: text) }

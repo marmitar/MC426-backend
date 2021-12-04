@@ -4,7 +4,7 @@ import SwiftSoup
 /// URL do índice de disciplinas.
 private let indexURL = "https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/disciplinas/index.html"
 
-extension Discipline: WebScrapabl {
+extension Discipline: WebScrapable {
     // MARK: - Scraping de disciplinas.
 
     static func scrape(with scraper: WebScraper) async throws -> [Discipline] {
@@ -147,7 +147,7 @@ extension Discipline: WebScrapabl {
     /// - returns: O mesmo código, caso seja válido.
     static func parseCode(in text: String) throws -> String? {
         try parseRequirement(in: text).flatMap { requirement in
-            if requirement.partial || requirement.special {
+            if requirement.partial {
                 return nil
             } else {
                 return requirement.code

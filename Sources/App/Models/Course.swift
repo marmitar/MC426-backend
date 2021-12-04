@@ -30,6 +30,16 @@ struct Course: Content, Hashable {
                 hasher.combine(self.code)
             }
         }
+
+        /// Total de créditos em disciplinas obrigatórias.
+        var requiredCredits: UInt {
+            self.disciplines.reduce(0) { $0 + $1.credits }
+        }
+
+        /// Total de cŕeditos.
+        var credits: UInt {
+            self.requiredCredits + self.electives
+        }
     }
 
     /// Representa uma modalidade de um curso.
@@ -37,7 +47,7 @@ struct Course: Content, Hashable {
         /// Nome da modalidade.
         let name: String
         // Código da modalidade (nem todas têm).
-        let code: String?
+        let code: String
         /// Árvore da modalidade.
         let tree: Tree
     }
@@ -69,11 +79,6 @@ struct Course: Content, Hashable {
                 return [tree]
         }
     }
-}
-
-extension Course: WebScrapable {
-    static let scriptName = "courses.py"
-    typealias Output = Self
 }
 
 extension Course: Searchable {

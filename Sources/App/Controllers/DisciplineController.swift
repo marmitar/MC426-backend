@@ -6,10 +6,8 @@ extension Discipline {
     ///
     /// Classe singleton. Usar `app.disciplines` para pegar instância.
     final class Controller: ContentController<Discipline> {
-
         /// Inicializador privado do singleton.
         init(app: Application) async throws {
-            print("Scraping...")
             let data = try await app.webScraper.scrape(Discipline.self)
             try super.init(entries: data, logger: app.logger)
         }
@@ -18,7 +16,6 @@ extension Discipline {
         func fetchDiscipline(_ req: Request) throws -> Discipline {
             try fetchContent(on: .code, req)
         }
-
     }
 }
 

@@ -48,7 +48,7 @@ internal struct SearchController {
 
         let (elapsed, matches) = try await withTiming { () -> [Match] in
             async let disciplines = try await req.disciplines.search(for: query, limitedTo: limit, upTo: maxScore)
-            async let courses = Course.Controller.shared.search(for: query, limitedTo: limit, upTo: maxScore)
+            async let courses = try await req.courses.search(for: query, limitedTo: limit, upTo: maxScore)
             return mergeAndSortSearchResults(results: try await [disciplines, courses], limitingTo: limit)
         }
         req.logger.info("Searched for \"\(query)\" with \(matches.count) results in \(elapsed) secs.")

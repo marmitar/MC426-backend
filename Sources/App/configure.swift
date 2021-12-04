@@ -49,6 +49,6 @@ private func initializeControllers(_ app: Application) {
         try await app.disciplines
     }
     _ = app.eventLoopGroup.performWithTask {
-        Course.Controller.shared
+        try await app.courses
     }
 }

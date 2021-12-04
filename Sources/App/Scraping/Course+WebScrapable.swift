@@ -4,7 +4,7 @@ import SwiftSoup
 /// URL do índice de disciplinas.
 private let indexURL = "https://www.dac.unicamp.br/sistemas/catalogos/grad/catalogo2021/index.html"
 
-extension Course: WebScrapabl {
+extension Course: WebScrapable {
     // MARK: - Scraping de disciplinas.
 
     static func scrape(with scraper: WebScraper) async throws -> [Course] {
@@ -116,13 +116,11 @@ extension Course: WebScrapabl {
             }
         }
         guard
+            let code = code,
             let tree = tree,
             tree.reduce(0, { $0 + $1.credits }) > 0
         else {
             throw ParsingError.unparseableText(node: section, type: Variant.self)
-        }
-        if code == nil {
-            print("Found nil, course: \(name)")
         }
 
         return Variant(name: name, code: code, tree: tree)

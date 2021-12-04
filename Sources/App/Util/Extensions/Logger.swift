@@ -35,9 +35,9 @@ extension Logger {
         var metadata = additional.mapValues { Logger.MetadataValue.string($0) }
 
         if let type = service {
-            metadata["Service"] = "\(type)"
+            metadata["dervice"] = "\(type)"
         }
-        metadata["Error"] = .stringConvertible(error as CustomStringConvertible)
+        metadata["error"] = .stringConvertible(error as CustomStringConvertible)
         return metadata
     }
 

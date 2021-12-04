@@ -3,7 +3,7 @@ import Vapor
 import SwiftSoup
 
 /// Algum dado que é recuperado da internet, em geral através de parsing HTML.
-protocol WebScrapabl { // TODO: fix nome
+protocol WebScrapable {
     /// Nome do arquivo usado para fazer caching dos resultados.
     ///
     /// Padrão: nome do tipo.
@@ -18,12 +18,23 @@ protocol WebScrapabl { // TODO: fix nome
     /// - Returns: Conteúdo parseado do scraping.
     @inlinable
     static func scrape(with scraper: WebScraper) async throws -> WebScrapingOutput
+
+    /// Retorna a contagem de elementos da saída. Usada para depuração e logging.
+    @inlinable
+    static func size(of output: WebScrapingOutput) -> Int
 }
 
-extension WebScrapabl {
+extension WebScrapable {
     @inlinable
     static var cacheFile: String {
         "\(Self.self)"
+    }
+}
+
+extension WebScrapable where WebScrapingOutput: Collection {
+    @inlinable
+    static func size(of output: WebScrapingOutput) -> Int {
+        output.count
     }
 }
 
@@ -80,8 +91,8 @@ struct WebScraper {
                     https://github.com/swift-server/async-http-client/issues/488.
                     """,
                     metadata: [
-                        "Service": "\(Self.self)",
-                        "HTTP Version Configuration": "\(version)"
+                        "service": "\(Self.self)",
+                        "http-version-config": "\(version)"
                     ]
                 )
                 self.alreadyWarned = true
@@ -153,9 +164,9 @@ extension WebScraper {
 
     /// Faz o scraping do conteúdo, se necessário. Sempre prefere usar o caching para carregar os dados.
     @inlinable
-    func scrape<Content: WebScrapabl>(_ type: Content.Type = Content.self) async throws -> Content.WebScrapingOutput {
+    func scrape<Content: WebScrapable>(_ type: Content.Type = Content.self) async throws -> Content.WebScrapingOutput {
         if self.configuration.useCaching {
-            if let content = await self.tryLoadJSON(Content.WebScrapingOutput.self, from: self.cacheFile(for: type)) {
+            if let content = await self.tryLoadJSON(Content.self, from: self.cacheFile(for: type)) {
                 return content
             }
             // em caso de erro, ignora o cache
@@ -165,10 +176,22 @@ extension WebScraper {
 
     /// Faz o scraping de um conteúdo novo e sobrescreve o arquivo de caching.
     @inlinable
-    func scrapeFresh<Content: WebScrapabl>(
+    func scrapeFresh<Content: WebScrapable>(
         _ type: Content.Type = Content.self
     ) async throws -> Content.WebScrapingOutput {
-        let content = try await Content.scrape(with: self)
+        self.logger.info("Scraping fresh content...", metadata: [
+            "content": "\(Content.self)",
+            "service": "\(Self.self)"
+        ])
+
+        let (elapsed, content) = try await withTiming {
+            try await Content.scrape(with: self)
+        }
+        self.logger.info("Content fully scraped after \(elapsed) seconds.", metadata: [
+            "content": "\(Content.self)",
+            "service": "\(Self.self)",
+            "content-size": "\(Content.size(of: content))"
+        ])
 
         if self.configuration.useCaching {
             // faz o salvamento do cache em outra task, sem travar essa
@@ -180,19 +203,27 @@ extension WebScraper {
     /// Tenta executar `loadJSON` ou acusa um erro pelo `logger`.
     ///
     /// Usa o FileManager por ser mais simples, já que essa função roda no background.
-    private func tryLoadJSON<Content: Decodable>(
+    private func tryLoadJSON<Content: WebScrapable>(
         _ type: Content.Type = Content.self,
         from path: String
-    ) async -> Content? {
+    ) async -> Content.WebScrapingOutput? {
         do {
-            return try await self.loadJSON(type, from: path)
+            let content = try await self.loadJSON(Content.WebScrapingOutput.self, from: path)
+
+            self.logger.info("Scraped content loaded from JSON file", metadata: [
+                "content": "\(Content.self)",
+                "file-path": .string(path),
+                "service": "\(Self.self)",
+                "content-size": "\(Content.size(of: content))"
+            ])
+            return content
         } catch {
             self.logger.report(
                 level: .info,
                 error,
                 Service: Self.self,
                 additional: "Could not load scraped content from JSON file",
-                metadata: ["Content": "\(Content.self)", "File Location": path]
+                metadata: ["content": "\(Content.self)", "file-path": path]
             )
             return nil
         }
@@ -210,7 +241,7 @@ extension WebScraper {
                 error,
                 Service: Self.self,
                 additional: "Could not save scraped content to JSON file",
-                metadata: ["Content": "\(Content.self)", "File Location": path]
+                metadata: ["content": "\(Content.self)", "file-path": path]
             )
         }
     }
@@ -263,7 +294,7 @@ extension WebScraper {
 
     /// Path do arquivo usado para caching de `Content`.
     @inlinable
-    func cacheFile<Content: WebScrapabl>(for content: Content.Type) -> String {
+    func cacheFile<Content: WebScrapable>(for content: Content.Type) -> String {
         // remove partes como "/" e "." do nome do arquivo para sempre funcionar corretamente
         let filename = "\(Content.cacheFile.replacingNonAlphaNum()).json"
         return self.cacheDirectory.appendingPathComponent(filename, isDirectory: false).path
