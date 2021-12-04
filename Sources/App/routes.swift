@@ -1,7 +1,31 @@
 import Vapor
 
-func routes(_ app: Application) throws {
-    let api = app.grouped("api")
+func routes(_ app: RoutesBuilder) throws {
+    // Página principal: carrega o frontend
+    app.get("") { req in
+        getIndexHTML(for: req)
+    }
+
+    // endpoint para requisições da API
+    api_routes(app.grouped("api"))
+
+    // Fallback: deixa o frontend tratar
+    app.get("**") { req in
+        getIndexHTML(for: req)
+    }
+}
+
+/// Carrega o HTML gerado pelo frontend.
+private func getIndexHTML(for req: Request) -> Response {
+    req.fileio.streamFile(at: "Public/index.html", mediaType: .html)
+}
+
+/// Rotas usadas pela API.
+private func api_routes(_ api: RoutesBuilder) {
+    // API: resposta padrão
+    api.get("") { _ -> Response in
+        throw Abort(.noContent)
+    }
 
     // API: busca textual entre vários elementos.
     api.get("busca") { req in
@@ -15,11 +39,16 @@ func routes(_ app: Application) throws {
 
     // API: dados para a página de um curso
     api.get("curso", ":code") { req in
-        return try await req.courses.fetchCourse(req)
+        try await req.courses.fetchCourse(req)
     }
 
     // API: dados para a página de árvore do curso
     api.get("curso", ":code", ":variant") { req in
-        return try await req.courses.fetchCourseTree(req)
+        try await req.courses.fetchCourseTree(req)
+    }
+
+    // API: desconhecida
+    api.get("**") { _ -> Response in
+        throw Abort(.badRequest)
     }
 }

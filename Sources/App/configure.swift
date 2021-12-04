@@ -14,6 +14,7 @@ public func configure(_ app: Application) throws {
     // config do client
     app.http.client.configuration.httpVersion = .http1Only
     app.http.client.configuration.connectionPool.concurrentHTTP1ConnectionsPerHostSoftLimit = 24
+    app.http.server.configuration.hostname = "0.0.0.0"
 
     // serve arquivo da pasta /Public
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
