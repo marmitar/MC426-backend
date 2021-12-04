@@ -64,7 +64,7 @@ struct Course: Content, Hashable {
     var variantNames: [String] {
         switch self.curriculum {
             case .variants(let variants):
-                return variants.map { $0.name }
+                return variants.map { "\($0.code) - \($0.name)" }
             case .tree:
                 return []
         }

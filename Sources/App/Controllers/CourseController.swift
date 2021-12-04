@@ -13,16 +13,18 @@ extension Course {
         }
 
         /// Recupera curso por código.
-        func fetchCourse(_ req: Request) throws -> Course {
-            try fetchContent(on: .code, req)
+        func fetchCourse(_ req: Request) throws -> Course.Preview {
+            let course = try fetchContent(on: .code, req)
+            let variants = course.variantNames
+
+            return Preview(code: course.code, name: course.name, variants: variants)
         }
 
         func fetchCourseTree(_ req: Request) throws -> Course.Tree {
             // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
             let variant = req.parameters.get("variant")!
 
-            let course = try self.fetchCourse(req)
-
+            let course = try self.fetchContent(on: .code, req)
             guard
                 let index = Int(variant),
                 let tree = course.trees.get(at: index)
@@ -32,6 +34,13 @@ extension Course {
 
             return tree
         }
+    }
+
+    /// Resumo do curso, sem as árvores.
+    struct Preview: Content {
+        let code: String
+        let name: String
+        let variants: [String]
     }
 }
 

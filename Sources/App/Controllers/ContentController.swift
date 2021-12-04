@@ -27,7 +27,6 @@ class ContentController<Content: Matchable> {
     }
 
     func fetchContent(on field: Content.Properties, _ req: Request) throws -> Content {
-
         // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
         let text = req.parameters.get("\(field)")!
 
