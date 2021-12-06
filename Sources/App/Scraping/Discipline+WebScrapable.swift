@@ -64,7 +64,7 @@ extension Discipline: WebScrapable {
             try parseAllRequirements(in: $0)
         }
 
-        return Discipline(code: code, name: name, credits: credits, reqs: reqs, reqBy: Set(), syllabus: syllabus)
+        return Discipline(code: code, name: name, credits: credits, reqs: reqs, reqBy: [], syllabus: syllabus)
     }
 
     /// Parser do texto do header (`<h2 id="disc-XX000">`) de uma discplina.
@@ -90,9 +90,9 @@ extension Discipline: WebScrapable {
     ///     `$GRUPO (ou $GRUPO)...` em que `$GRUPO` tem o formato `$CODIGO(+$CODIGO)...` e o código é aceito
     ///      por ``parseRequirement``.
     /// - Returns: Um conjunto de grupos de requisitos ou `nil` se o texto está em outro formato.
-    private static func parseAllRequirements(in text: String) throws -> Set<Set<Requirement>>? {
+    private static func parseAllRequirements(in text: String) throws -> ArraySet<ArraySet<Requirement>>? {
         guard text.reducingWhitespace() != "Não há pré-requisitos para essa disciplina" else {
-            return Set()
+            return []
         }
 
         return try parseTextualGroup(in: text, separatedBy: "ou") { group in
@@ -112,11 +112,11 @@ extension Discipline: WebScrapable {
         in text: String,
         separatedBy separator: String,
         parser: (String) throws -> Item?
-    ) rethrows -> Set<Item>? {
+    ) rethrows -> ArraySet<Item>? {
         try text.components(separatedBy: separator)
             .filter { !$0.isEmpty }
             .tryMap { try parser($0.reducingWhitespace()) }
-            .map { results in Set(results) }
+            .map { results in ArraySet(uniqueValues: results) }
     }
 
     /// Regex que dá match com código de disciplinas e opcionalmente o marcador `*` de pré-requisito parcial.

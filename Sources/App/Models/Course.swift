@@ -2,7 +2,7 @@ import Foundation
 import Vapor
 
 /// Representação de um curso.
-struct Course: Content, Hashable {
+struct Course: Content, Hashable, Sendable {
     /// Código do curso.
     let code: String
     /// Nome do curso.
@@ -16,18 +16,22 @@ struct Course: Content, Hashable {
     /// Um semestre no currículo de um curso.
     struct Semester: Content, Hashable {
         /// Disciplinas no semestre, com código e créditos.
-        let disciplines: Set<DisciplinePreview>
+        let disciplines: ArraySet<DisciplinePreview>
         /// Quantidade de créditos eletivos no semestre.
         let electives: UInt
 
         /// Disciplina representada por seu código e quantidade de créditos.
-        struct DisciplinePreview: Hashable, Content {
+        struct DisciplinePreview: Hashable, Content, Comparable {
             let code: String
             let credits: UInt
 
             func hash(into hasher: inout Hasher) {
                 // só o código deve importar no hash
                 hasher.combine(self.code)
+            }
+
+            static func < (_ first: Self, _ second: Self) -> Bool {
+                first.code < second.code
             }
         }
 
@@ -82,9 +86,6 @@ struct Course: Content, Hashable {
 }
 
 extension Course: Searchable {
-    /// Ordena por nome, para buscar mais rápido.
-    static let sortOn: Properties? = .code
-
     /// Propriedades buscáveis no curso.
     enum Properties: SearchableProperty {
         /// Busca por código.
@@ -101,18 +102,5 @@ extension Course: Searchable {
                     return item.name
             }
         }
-    }
-}
-
-extension Course: Matchable {
-    /// Forma reduzida, com código e nome.
-    struct ReducedForm: Encodable {
-        let code: String
-        let name: String
-    }
-
-    @inlinable
-    func reduced() -> ReducedForm {
-        .init(code: self.code, name: self.name)
     }
 }

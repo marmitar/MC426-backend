@@ -142,7 +142,7 @@ extension Course: WebScrapable {
     /// returns: Árvore com os semestres parseados.
     /// attention: Semestres vazios são considerados continuações do semestre anterior.
     private static func parseMedicineTree(from treeTable: Element) throws -> Tree {
-        let emptySemester = Semester(disciplines: Set(), electives: 0)
+        let emptySemester = Semester(disciplines: [], electives: 0)
         var semesters: [Semester] = .init(repeating: emptySemester, count: 12)
 
         try treeTable.getElementsByTag("p").forEach { content in
@@ -201,7 +201,7 @@ extension Course.Semester {
             throw ParsingError.unparseableText(node: paragraph, type: Self.self)
         }
 
-        return (number - 1, Self(disciplines: Set(disciplines), electives: electives))
+        return (number - 1, Self(disciplines: ArraySet(uniqueValues: disciplines), electives: electives))
     }
 
     /// Regex para a extração do semestre a partir do texto `00º Semestre - 00 créditos`.

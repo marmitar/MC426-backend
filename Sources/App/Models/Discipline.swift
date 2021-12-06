@@ -2,7 +2,7 @@ import Foundation
 import Vapor
 
 /// Representação de uma matéria.
-struct Discipline: Content, Hashable {
+struct Discipline: Content, Hashable, Sendable {
     /// Código da disciplina.
     let code: String
     /// Nome da disciplina.
@@ -10,26 +10,28 @@ struct Discipline: Content, Hashable {
     /// Número de créditos.
     let credits: UInt
     /// Grupos de requisitos da disciplina.
-    let reqs: Set<Set<Requirement>>
+    let reqs: ArraySet<ArraySet<Requirement>>
     /// Disciplina que tem essa como requisito.
-    let reqBy: Set<String>
+    let reqBy: ArraySet<String>
     /// Ementa da disciplina.
     let syllabus: String
 
     /// Requisito de uma disciplina.
-    struct Requirement: Content, Hashable {
+    struct Requirement: Content, Hashable, Comparable {
         /// Código de requisito.
         let code: String
         /// Se o requisito é parcial.
         let partial: Bool
         /// Se o requisito não é uma disciplina propriamente.
         let special: Bool
+
+        static func < (_ first: Self, _ second: Self) -> Bool {
+            first.code < second.code
+        }
     }
 }
 
 extension Discipline: Searchable {
-    /// Ordena por código, para buscar mais rápido.
-    static let sortOn: Properties? = .code
 
     /// Propriedades buscáveis na disciplina.
     enum Properties: SearchableProperty {
@@ -64,19 +66,5 @@ extension Discipline: Searchable {
                     return 0.1
             }
         }
-    }
-}
-
-extension Discipline: Matchable {
-    /// Forma reduzida da disciplina, com
-    /// apenas nome e código.
-    struct ReducedForm: Encodable {
-        let code: String
-        let name: String
-    }
-
-    @inlinable
-    func reduced() -> ReducedForm {
-        .init(code: self.code, name: self.name)
     }
 }
