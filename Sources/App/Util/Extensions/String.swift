@@ -7,7 +7,7 @@
 
 import Foundation
 
-internal extension StringProtocol {
+extension StringProtocol {
     /// Retorna uma versão normalizada da String em relação a caracteres especiais.
     ///
     /// Remove acentos e padroniza a String para não ter diferença entre maiúsculas e minúsculas, além de tratar
@@ -61,7 +61,7 @@ internal extension StringProtocol {
     }
 }
 
-internal extension Character {
+extension Character {
     /// Se esse caracter é um ASCII alfanumérico.
     ///
     /// Equivalente ao grupo `[a-zA-Z0-9]` em expressões regulares.

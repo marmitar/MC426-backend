@@ -1,6 +1,24 @@
 import Foundation
 import Vapor
 
+extension Application {
+    /// Instância compartilhada do singleton.
+    var disciplines: Discipline.Controller {
+        get async throws {
+            try await self.instance(controller: Discipline.Controller.self)
+        }
+    }
+}
+
+extension Request {
+    /// Instância compartilhada do singleton.
+    var disciplines: Discipline.Controller {
+        get async throws {
+            try await self.application.disciplines
+        }
+    }
+}
+
 extension Discipline {
     /// Controlador das disciplinas recuperadas por Scraping.
     ///
@@ -21,24 +39,6 @@ extension Discipline {
                 throw Abort(.notFound)
             }
             return discipline
-        }
-    }
-}
-
-extension Application {
-    /// Instância compartilhada do singleton.
-    var disciplines: Discipline.Controller {
-        get async throws {
-            try await self.instance(controller: Discipline.Controller.self)
-        }
-    }
-}
-
-extension Request {
-    /// Instância compartilhada do singleton.
-    var disciplines: Discipline.Controller {
-        get async throws {
-            try await self.application.disciplines
         }
     }
 }

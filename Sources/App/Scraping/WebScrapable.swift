@@ -118,7 +118,7 @@ struct WebScraper {
     }
 
     /// Incializa `WebScraper` para a aplicação.
-    init(app: Application) {
+    fileprivate init(app: Application) {
         self.app = app
     }
 }

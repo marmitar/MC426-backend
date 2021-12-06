@@ -1,6 +1,24 @@
 import Foundation
 import Vapor
 
+extension Application {
+    /// Instância compartilhada do singleton.
+    var courses: Course.Controller {
+        get async throws {
+            try await self.instance(controller: Course.Controller.self)
+        }
+    }
+}
+
+extension Request {
+    /// Instância compartilhada do singleton.
+    var courses: Course.Controller {
+        get async throws {
+            try await self.application.courses
+        }
+    }
+}
+
 extension Course {
     /// Controlador dos cursos recuperados por Scraping.
     ///
@@ -45,23 +63,5 @@ extension Course {
         let code: String
         let name: String
         let variants: [String]
-    }
-}
-
-extension Application {
-    /// Instância compartilhada do singleton.
-    var courses: Course.Controller {
-        get async throws {
-            try await self.instance(controller: Course.Controller.self)
-        }
-    }
-}
-
-extension Request {
-    /// Instância compartilhada do singleton.
-    var courses: Course.Controller {
-        get async throws {
-            try await self.application.courses
-        }
     }
 }
