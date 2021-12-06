@@ -54,11 +54,11 @@ struct WebScraper {
         /// Avisa se a aplicação está usando versões mais novas do HTTP.
         ///
         /// Vários sites mais antigos tem problema em tratar corretamente requisições em HTTP/2.
-        public var warnAboutHttpVersion: Bool = true
+        public var warnAboutHttpVersion = true
         /// Nome do diretório usado para caching em `Resources`. (padrão: "Cache")
-        public var cacheDirectory: String = "Cache"
+        public var cacheDirectory = "Cache"
         /// Se o `WebScraper` deve fazer e usar caching dos resultados de scraping.
-        public var useCaching: Bool = true
+        public var useCaching = true
 
         /// Singleton que mantém a config global.
         public static var global = Configuration()

@@ -27,24 +27,31 @@ private func api_routes(_ api: RoutesBuilder) {
         throw Abort(.noContent)
     }
 
-    // API: busca textual entre vários elementos.
-    api.get("busca") { req in
-        try await SearchController.shared.searchFor(req)
-    }
+    // // API: busca textual entre vários elementos.
+    // api.get("busca") { req in
+    //     try await SearchController.shared.searchFor(req)
+    // }
 
     // API: dados para a página de uma disciplina
     api.get("disciplina", ":code") { req in
-        try await req.disciplines.fetchDiscipline(req)
+        try await req.disciplines.fetchDiscipline(
+            code: try req.parameters.require("code")
+        )
     }
 
     // API: dados para a página de um curso
     api.get("curso", ":code") { req in
-        try await req.courses.fetchCourse(req)
+        try await req.courses.fetchCourse(
+            code: try req.parameters.require("code")
+        )
     }
 
     // API: dados para a página de árvore do curso
     api.get("curso", ":code", ":variant") { req in
-        try await req.courses.fetchCourseTree(req)
+        try await req.courses.fetchCourseTree(
+            code: try req.parameters.require("code"),
+            variant: try req.parameters.require("variant")
+        )
     }
 
     // API: desconhecida

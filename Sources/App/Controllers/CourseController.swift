@@ -5,28 +5,32 @@ extension Course {
     /// Controlador dos cursos recuperados por Scraping.
     ///
     /// Classe singleton. Usar `app.courses` para pegar instância.
-    final class Controller: ContentController<Course> {
+    struct Controller: ContentController {
+        private let courses: [String: Course]
+
         /// Inicializador privado do singleton.
-        init(app: Application) async throws {
-            let data = try await app.webScraper.scrape(Course.self)
-            try super.init(entries: data, logger: app.logger)
+        init(content: [Course]) {
+            self.courses = Dictionary(uniqueKeysWithValues: content.map { course in
+                (code: course.code, course)
+            })
         }
 
         /// Recupera curso por código.
-        func fetchCourse(_ req: Request) throws -> Course.Preview {
-            let course = try fetchContent(on: .code, req)
-            let variants = course.variantNames
+        func fetchCourse(code: String) throws -> Course.Preview {
+            guard let course = self.courses[code] else {
+                throw Abort(.notFound)
+            }
 
-            return Preview(code: course.code, name: course.name, variants: variants)
+            return Preview(code: course.code, name: course.name, variants: course.variantNames)
         }
 
-        func fetchCourseTree(_ req: Request) throws -> Course.Tree {
-            // SAFETY: o router do Vapor só deixa chegar aqui com o parâmetro
-            let variant = req.parameters.get("variant")!
-
-            let course = try self.fetchContent(on: .code, req)
+        /// Recupera árvore por código e índice.
+        func fetchCourseTree(code: String, variant: String) throws -> Course.Tree {
+            guard let index = Int(variant) else {
+                throw Abort(.badRequest)
+            }
             guard
-                let index = Int(variant),
+                let course = self.courses[code],
                 let tree = course.trees.get(at: index)
             else {
                 throw Abort(.notFound)
@@ -45,33 +49,10 @@ extension Course {
 }
 
 extension Application {
-    /// Chave para acesso do singleton
-    private enum CourseControllerKey: StorageKey, LockKey {
-        typealias Value = EventLoopFuture<Course.Controller>
-    }
-
-    /// O `Future` do controlador, que fica armazenado em `storage`.
-    ///
-    /// Só deve existir um desses future e os acessos esperam nele.
-    private var coursesFuture: EventLoopFuture<Course.Controller> {
-        if let future = self.storage[CourseControllerKey.self] {
-            return future
-        } else {
-            let future = self.eventLoopGroup.performWithTask {
-                try await Course.Controller(app: self)
-            }
-            self.storage[CourseControllerKey.self] = future
-            return future
-        }
-    }
-
     /// Instância compartilhada do singleton.
     var courses: Course.Controller {
         get async throws {
-            try await self.locks
-                .lock(for: CourseControllerKey.self)
-                .withLock { self.coursesFuture }
-                .get()
+            try await self.instance(controller: Course.Controller.self)
         }
     }
 }

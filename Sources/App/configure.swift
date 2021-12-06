@@ -1,9 +1,6 @@
 import Foundation
 import Vapor
 
-/// Future usada em Vapor e NIO.
-typealias Future<T> = EventLoopFuture<T>
-
 // configures your application
 public func configure(_ app: Application) throws {
     // config do servidor
@@ -21,8 +18,9 @@ public func configure(_ app: Application) throws {
 
     // formata melhor o JSON no modo de desenvolvimento
     if case .development = app.environment {
-        Match.encodeScoresForSending()
         enablePrettyPrintForJSON()
+        app.searchCache.configuration.sendHiddenFields = true
+        app.searchCache.configuration.sendScore = true
     }
 
     initializeControllers(app)
@@ -46,10 +44,6 @@ private func initializeControllers(_ app: Application) {
     // carregar os dados de forma assíncrona.
     // `.shared` é lazy por ser estático, e por isso
     // roda de forma assíncrona abaixo.
-    _ = app.eventLoopGroup.performWithTask {
-        try await app.disciplines
-    }
-    _ = app.eventLoopGroup.performWithTask {
-        try await app.courses
-    }
+    app.initialize(controller: Discipline.Controller.self)
+    app.initialize(controller: Course.Controller.self)
 }
