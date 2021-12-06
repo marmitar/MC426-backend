@@ -25,6 +25,7 @@ struct Discipline: Content, Hashable, Sendable {
         /// Se o requisito não é uma disciplina propriamente.
         let special: Bool
 
+        @inlinable
         static func < (_ first: Self, _ second: Self) -> Bool {
             first.code < second.code
         }

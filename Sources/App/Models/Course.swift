@@ -36,11 +36,13 @@ struct Course: Content, Hashable, Sendable {
         }
 
         /// Total de créditos em disciplinas obrigatórias.
+        @inlinable
         var requiredCredits: UInt {
             self.disciplines.reduce(0) { $0 + $1.credits }
         }
 
         /// Total de cŕeditos.
+        @inlinable
         var credits: UInt {
             self.requiredCredits + self.electives
         }
@@ -65,6 +67,7 @@ struct Course: Content, Hashable, Sendable {
     }
 
     /// Nome das modalidades no currículo.
+    @inlinable
     var variantNames: [String] {
         switch self.curriculum {
             case .variants(let variants):
@@ -75,6 +78,7 @@ struct Course: Content, Hashable, Sendable {
     }
 
     /// Árvores para cada modalidade no currículo.
+    @inlinable
     var trees: [Tree] {
         switch self.curriculum {
             case .variants(let variants):
