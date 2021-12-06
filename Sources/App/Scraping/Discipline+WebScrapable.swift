@@ -10,7 +10,8 @@ extension Discipline: WebScrapable {
     static func scrape(with scraper: WebScraper) async throws -> [Discipline] {
         // carrega e parseia o índice
         let index = try await scraper.getHTML(from: indexURL)
-        return try await scrapeIndex(page: index, with: scraper)
+        let disciplines = try await scrapeIndex(page: index, with: scraper)
+        return self.updateDisciplines(disciplines)
     }
 
     /// Parsing da página índice para encontrar os links das páginas de disciplinas e parsear cada uma.
@@ -34,6 +35,41 @@ extension Discipline: WebScrapable {
         return try headers.compactMap { header in
             try parseDiscipline(from: header)
         }
+    }
+
+    /// Atualiza os campos `special` e `reqBy` nos dados de disciplinas.
+    private static func updateDisciplines(_ disciplines: [Discipline]) -> [Discipline] {
+        let (present, requiredBy) = self.extractPresentAndReqBy(from: disciplines)
+
+        return disciplines.map { discipline in
+            let reqs = discipline.reqs.map { requirementGroup in
+                ArraySet(uniqueValues: requirementGroup.map { requirement in
+                    requirement.update(special: !present.contains(requirement.code))
+                })
+            }
+            let reqBy = ArraySet(requiredBy[discipline.code] ?? [])
+            return discipline.update(reqs: ArraySet(uniqueValues: reqs), reqBy: reqBy)
+        }
+    }
+
+    /// Extração de dados necessários para atualizar os dados das dsiciplinas.
+    private static func extractPresentAndReqBy(
+        from disciplines: [Discipline]
+    ) -> (present: Set<String>, reqBy: [String: Set<String>]) {
+
+        var requiredBy: [String: Set<String>] = [:]
+        var present: Set<String> = []
+
+        for discipline in disciplines {
+            present.update(with: discipline.code)
+
+            discipline.reqs.flatMap({ $0 }).forEach { requirement in
+                var codes = requiredBy[requirement.code] ?? []
+                codes.update(with: discipline.code)
+                requiredBy[requirement.code] = codes
+            }
+        }
+        return (present, requiredBy)
     }
 
     // MARK: - Parsing da disciplina.

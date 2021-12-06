@@ -16,6 +16,24 @@ struct Discipline: Content, Hashable, Sendable {
     /// Ementa da disciplina.
     let syllabus: String
 
+    /// Constrói nova disciplina com mesmo código e alguns campos modificados.
+    func update(
+        name: String? = nil,
+        credits: UInt? = nil,
+        reqs: ArraySet<ArraySet<Requirement>>? = nil,
+        reqBy: ArraySet<String>? = nil,
+        syllabus: String? = nil
+    ) -> Discipline {
+        .init(
+            code: self.code,
+            name: name ?? self.name,
+            credits: credits ?? self.credits,
+            reqs: reqs ?? self.reqs,
+            reqBy: reqBy ?? self.reqBy,
+            syllabus: syllabus ?? self.syllabus
+        )
+    }
+
     /// Requisito de uma disciplina.
     struct Requirement: Content, Hashable, Comparable {
         /// Código de requisito.
@@ -28,6 +46,11 @@ struct Discipline: Content, Hashable, Sendable {
         @inlinable
         static func < (_ first: Self, _ second: Self) -> Bool {
             first.code < second.code
+        }
+
+        /// Constrói novo requisito com mesmo código e alguns campos modificados.
+        func update(partial: Bool? = nil, special: Bool? = nil) -> Requirement {
+            .init(code: self.code, partial: partial ?? self.partial, special: special ?? self.special)
         }
     }
 }
