@@ -23,10 +23,13 @@ public func configure(_ app: Application) throws {
         app.searchCache.configuration.sendScore = true
     }
 
-    initializeControllers(app)
+    // inicalização dos controladores e das rotas
+    app.initialize(controller: Discipline.Controller.self)
+    app.initialize(controller: Course.Controller.self)
+    routes(app)
 
-    // register routes
-    try routes(app)
+    // comando para somente buildar o cache e sair
+    app.commands.use(BuildCache(), as: "build-cache")
 }
 
 /// Formata output de JSON com chaves ordenadas e identadas.
@@ -38,12 +41,17 @@ private func enablePrettyPrintForJSON() {
     ContentConfiguration.global.use(encoder: encoder, for: .json)
 }
 
-private func initializeControllers(_ app: Application) {
-    // Inicia thread para preparar os dados.
-    // Pega instância de singleton pela primeira vez para
-    // carregar os dados de forma assíncrona.
-    // `.shared` é lazy por ser estático, e por isso
-    // roda de forma assíncrona abaixo.
-    app.initialize(controller: Discipline.Controller.self)
-    app.initialize(controller: Course.Controller.self)
+/// Comando para somente buildar o cache do web scraping e sair.
+struct BuildCache: Command {
+    struct Signature: CommandSignature { }
+
+    let help = "Run web scraping script, save cache and exit."
+
+    func run(using context: CommandContext, signature: Signature) throws {
+        let task = context.application.eventLoopGroup.performWithTask {
+            _ = try? await context.application.instance(controller: Discipline.Controller.self)
+            _ = try? await context.application.instance(controller: Course.Controller.self)
+        }
+        try task.wait()
+    }
 }

@@ -1,6 +1,6 @@
 import Vapor
 
-func routes(_ app: RoutesBuilder) throws {
+func routes(_ app: RoutesBuilder) {
     // Página principal: carrega o frontend
     app.get("") { req in
         getIndexHTML(for: req)

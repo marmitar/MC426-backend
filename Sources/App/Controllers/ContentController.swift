@@ -68,6 +68,7 @@ extension Application {
     /// - parameter type: Tipo do controlador a ser acessado ou instanciado.
     /// - returns: Controlador já inicializado.
     /// - throws: `503 Service Unavailable` se houve erro na inicialização do controlador.
+    @discardableResult
     func instance<Controller: ContentController>(controller type: Controller.Type) async throws -> Controller {
         let task = self.storage[ControllerKey<Controller>.self]
 
