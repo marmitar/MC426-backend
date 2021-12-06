@@ -27,10 +27,12 @@ private func api_routes(_ api: RoutesBuilder) {
         throw Abort(.noContent)
     }
 
-    // // API: busca textual entre vários elementos.
-    // api.get("busca") { req in
-    //     try await SearchController.shared.searchFor(req)
-    // }
+    // API: busca textual entre vários elementos.
+    api.get("busca") { req in
+        await req.searchController.searchFor(
+            params: try req.query.decode(SearchParams.self)
+        )
+    }
 
     // API: dados para a página de uma disciplina
     api.get("disciplina", ":code") { req in

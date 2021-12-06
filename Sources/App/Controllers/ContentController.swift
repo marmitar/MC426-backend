@@ -27,6 +27,7 @@ extension ContentController {
         let content = Array(output)
 
         self.init(content: content)
+        Task { app.searchCache.overwriteCache(with: content) }
     }
 }
 
