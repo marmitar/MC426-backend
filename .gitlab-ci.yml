@@ -26,7 +26,6 @@ workflow:
         DEPLOY_TAG: latest
     # Other branches need manual run at Gitlab
     - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_COMMIT_BRANCH == "refactor/async"
 
 # Template for jobs that use docker image
 .docker-template: &docker-template
