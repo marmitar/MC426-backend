@@ -22,7 +22,7 @@ protocol Searchable {
     static var hiddenFields: Set<Properties> { get }
 }
 
- extension Searchable {
+extension Searchable {
     @inlinable
     static var contentName: String {
         "\(Self.self)".lowercased()

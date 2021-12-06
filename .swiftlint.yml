@@ -1,11 +1,11 @@
 excluded:
     - .build
 
+opt_in_rules:
+    - indentation_width
+
 switch_case_alignment:
     indented_cases: true
-
-type_name:
-    excluded: Of
 
 nesting:
     type_level: 2

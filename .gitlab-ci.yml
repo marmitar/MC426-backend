@@ -26,6 +26,7 @@ workflow:
         DEPLOY_TAG: latest
     # Other branches need manual run at Gitlab
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == "refactor/async"
 
 # Template for jobs that use docker image
 .docker-template: &docker-template
@@ -41,16 +42,11 @@ workflow:
     - docker push $IMAGE:$DEPLOY_TAG
   cache: []
 
-.swift-dind-template: &swift-dind-template
-    <<: *docker-template
+.swift-built-template: &swift-built-template
+    image: $BUILT_IMAGE:$DEPLOY_TAG
     variables:
       GIT_SUBMODULE_STRATEGY: recursive
-      IMAGE: $BUILDER_IMAGE
-      CONTAINER: planejador
       LOG_LEVEL: debug
-    before_script:
-      - *docker-login
-      - docker create --name $CONTAINER $IMAGE:$DEPLOY_TAG
     script: []
 
 # Build image that contains the dependencies for building the server
@@ -72,33 +68,56 @@ builder-image:
 # Main build job
 build-release:
   stage: build
-  <<: *swift-dind-template
+  <<: *docker-template
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    IMAGE: $BUILDER_IMAGE
+    CONTAINER: planejador
+  before_script:
+    - *docker-login
+    - docker create -i --name $CONTAINER $IMAGE:$DEPLOY_TAG
+    - docker start $CONTAINER
   script:
-    - docker exec $CONTAINER swift build -c release
-    - export EXECUTABLE=$(docker exec $CONTAINER swift build -c release --show-bin-path)/Run
-    - docker exec $CONTAINER $EXECUTABLE build-cache
-    - docker commit $CONTAINER $BUILT_IMAGE:$TAG
-    - docker push $BUILT_IMAGE:$TAG
+    # prepare local source
+    - docker cp Sources/ $CONTAINER:/build/Sources
+    - docker cp Tests/ $CONTAINER:/build/Tests
+    - docker cp .swiftlint.yml $CONTAINER:/build/
+    # build swift with cache
+    - docker exec -i $CONTAINER swift build -c release
+    - export EXECUTABLE=$(docker exec -i $CONTAINER swift build -c release --show-bin-path)/Run
+    - docker exec -i $CONTAINER $EXECUTABLE build-cache
+    - docker commit $CONTAINER $BUILT_IMAGE:$DEPLOY_TAG
+    - docker push $BUILT_IMAGE:$DEPLOY_TAG
     # get artifacts out of of the container
     - docker cp $CONTAINER:"$EXECUTABLE" ./Run
-    - docker cp $CONTAINER:/build/Resources/Cache ./Resources/Cache
+    - docker cp $CONTAINER:/build/Resources/ ./Resources
   artifacts:
     name: "binary-and-cache"
     paths:
       - Run
-      - Resources/Cache
+      - Resources/Cache/
     expire_in: 1 hour
   needs:
     - job: builder-image
       optional: true
       artifacts: false
 
+# Lint source files
+swift-lint:
+  stage: test
+  <<: *swift-built-template
+  script:
+    - swiftlint
+  needs:
+    - job: build-release
+      artifacts: false
+
 # Main test job
 test-release-version:
   stage: test
-  <<: *swift-dind-template
+  <<: *swift-built-template
   script:
-    - docker exec $CONTAINER swift test -c release
+    - swift test -c release
   needs:
     - job: build-release
       artifacts: false
@@ -106,10 +125,10 @@ test-release-version:
 # Test debug version if release tests fail
 test-debug-version:
   stage: test-debug
-  <<: *swift-dind-template
+  <<: *swift-built-template
   script:
-    - docker exec $CONTAINER swift build -c debug
-    - docker exec $CONTAINER swift test -c debug
+    - swift build -c debug
+    - swift test -c debug
   when: on_failure
   needs:
     - job: test-release-version
