@@ -9,13 +9,50 @@ func XCTAssertJSON(
     file: StaticString = #file,
     line: UInt = #line
 ) {
-    XCTAssertEqual(
-        JSONValue(fromJson: try text()),
-        try value().toJsonValue(),
+    XCTAssertJSONEqual(
+        JSONValue(fromJson: try text()) ?? .null,
+        try value(),
         message(),
         file: file,
         line: line
     )
+}
+
+/// Checa dois valores de JSON, comparando cada subelemento por vez.
+func XCTAssertJSONEqual(
+    _ first: @autoclosure () throws -> JSONValue,
+    _ second: @autoclosure () throws -> JSONValue,
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #file,
+    line: UInt = #line
+) {
+    let first = Result { try first() }
+    let second = Result { try second() }
+    XCTAssertNoThrow(try first.get(), message(), file: file, line: line)
+    XCTAssertNoThrow(try second.get(), message(), file: file, line: line)
+
+    switch (try? first.get(), try? second.get()) {
+        case (.object(let first), .object(var second)):
+            for (key, value) in first {
+                let other = second.removeValue(forKey: key) ?? .null
+                XCTAssertJSONEqual(value, other, message(), file: file, line: line)
+            }
+            XCTAssertEqual(second, [:])
+        case (.array(let first), .array(var second)):
+            for value in first {
+                let other = second.isEmpty ? .null : second.removeFirst()
+                XCTAssertJSONEqual(value, other, message(), file: file, line: line)
+            }
+            XCTAssertEqual(second, [])
+        case (.number(let first), .number(let second)):
+            XCTAssertEqual(first, second, message(), file: file, line: line)
+        case (.string(let first), .string(let second)):
+            XCTAssertEqual(first, second, message(), file: file, line: line)
+        case (.boolean(let first), .boolean(let second)):
+            XCTAssertEqual(first, second, message(), file: file, line: line)
+        case (let first, let second):
+            XCTAssertEqual(first, second, message(), file: file, line: line)
+    }
 }
 
 /// Um valor que segue um dos tipos básicos em JSON.
@@ -42,7 +79,11 @@ enum JSONValue: Equatable, Hashable {
     /// Decoder para transformação textual.
     private static let decoder = JSONDecoder()
     /// Encoder para transformação textual.
-    private static let encoder = JSONEncoder()
+    private static let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting.formUnion(.prettyPrinted)
+        return encoder
+    }()
 
     /// Gera valor a partir de um texto válido em JSON.
     init?(fromJson string: String) {
@@ -156,16 +197,6 @@ extension JSONValue: CustomDebugStringConvertible {
                 return "null"
             default:
                 return "Invalid JSONValue"
-        }
-    }
-}
-
-extension JSONValue: LosslessStringConvertible {
-    init?(_ description: String) {
-        if let value = Self.init(fromJson: description) {
-            self = value
-        } else {
-            return nil
         }
     }
 }

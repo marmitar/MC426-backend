@@ -1,7 +1,7 @@
 @testable import App
 import XCTVapor
 
-final class DisciplineAPITests: XCTestCase {
+final class DisciplineAPITests: APITestCase {
 
     // MARK: - Montagem da URL do curso
 
@@ -24,6 +24,7 @@ final class DisciplineAPITests: XCTestCase {
             "name": "Algoritmos e Programação de Computadores",
             "syllabus": .string(expectedSyllabus),
             "credits": 6,
+            "reqs": [],
             "reqBy": [
                 "CV074", "CV632", "EA044", "EA060", "EA869", "EA954",
                 "EG940", "EM008", "EM024", "EQ048", "F 790", "FA103",

@@ -33,6 +33,8 @@ struct Discipline: Content, Hashable, Sendable {
 }
 
 extension Discipline: Searchable {
+    static let identifiers: Set<Properties> = [.code]
+    static let hiddenFields: Set<Properties> = [.syllabus]
 
     /// Propriedades buscáveis na disciplina.
     enum Properties: SearchableProperty {

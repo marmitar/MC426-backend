@@ -27,13 +27,18 @@ struct SearchParams: Content {
     let query: String
     let limit: UInt?
 
+    static var configuration: SearchController.Configuration {
+        get { SearchController.Configuration.global }
+        set { SearchController.Configuration.global = newValue }
+    }
+
     /// Limite de busca usado quando não especificado.
     var defaultSearchLimit: UInt {
-        SearchController.Configuration.global.defaultSearchLimit
+        Self.configuration.defaultSearchLimit
     }
     /// Limite máximo de busca.
     var maxSearchLimit: UInt {
-        SearchController.Configuration.global.maxSearchLimit
+        Self.configuration.maxSearchLimit
     }
 
     /// Limite a ser usado na busca.

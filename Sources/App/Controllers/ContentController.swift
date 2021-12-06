@@ -27,7 +27,46 @@ extension ContentController {
         let content = Array(output)
 
         self.init(content: content)
-        Task { app.searchCache.overwriteCache(with: content) }
+
+        app.addInitializationTask(Task {
+            app.searchCache.overwriteCache(with: content)
+        })
+    }
+}
+
+extension Application {
+    /// Chave para acesso de uma task geral de inicialização da aplicação.
+    private enum InitializationTaskKey: StorageKey, LockKey {
+        typealias Value = Task<Void, Error>
+    }
+
+    /// Espera a inicialização ser concluída.
+    func initialization() async throws {
+        let task = self.locks.lock(for: InitializationTaskKey.self).withLock {
+            self.storage[InitializationTaskKey.self]
+        }
+
+        try await task?.value
+    }
+
+    /// Espera de forma síncrona a inicialização ser concluída.
+    func waitInitialization() throws {
+        let tasks = self.eventLoopGroup.performWithTask {
+            try await self.initialization()
+        }
+        try tasks.wait()
+    }
+
+    /// Insere nova task de inicialização.
+    func addInitializationTask<Success, Failure: Error>(_ task: Task<Success, Failure>) {
+        self.locks.lock(for: InitializationTaskKey.self).withLockVoid {
+            let oldTask = self.storage[InitializationTaskKey.self]
+
+            self.storage[InitializationTaskKey.self] = Task {
+                try await oldTask?.value
+                _ = try await task.value
+            }
+        }
     }
 }
 
@@ -58,6 +97,7 @@ extension Application {
                 return nil
             }
         }
+        self.addInitializationTask(task)
 
         self.storage[ControllerKey<Controller>.self] = task
         return task
