@@ -1,4 +1,4 @@
 [submodule "Sources/RapidFuzz/rapidfuzz-cpp"]
 	path = Sources/RapidFuzz/rapidfuzz-cpp
-	url = git@gitlab.com:disciplinas1/mc426/rapidfuzz-cpp.git
+	url = ../rapidfuzz-cpp.git
 	branch = noexception
