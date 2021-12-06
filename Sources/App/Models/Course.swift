@@ -90,7 +90,7 @@ struct Course: Content, Hashable, Sendable {
 }
 
 extension Course: Searchable {
-    static let scaling = 2.0
+    static let scaling = 0.5
     static let identifiers: Set<Properties> = [.code]
 
     /// Propriedades buscáveis no curso.

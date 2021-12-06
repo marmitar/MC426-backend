@@ -23,30 +23,43 @@ extension ContentController {
     /// Cria novo controlador na aplicação fazendo o scraping dos dados.
     @inlinable
     init(app: Application) async throws {
-        let output = try await app.webScraper.scrape(ControlledContent.self)
-        let content = Array(output)
+        let content = Task {
+            Array(try await app.webScraper.scrape(ControlledContent.self))
+        }
 
-        self.init(content: content)
+        // inicializa task de search cache antes de esperar o scraping
+        app.initializationTask {
+            app.searchCache.overwriteCache(with: try await content.value)
+        }
+        self.init(content: try await content.value)
+    }
+}
 
-        app.addInitializationTask(Task {
-            app.searchCache.overwriteCache(with: content)
-        })
+private protocol Awaitable: Sendable {
+    func resolve() async throws
+}
+
+extension Task: Awaitable {
+    func resolve() async throws {
+        _ = try await self.value
     }
 }
 
 extension Application {
     /// Chave para acesso de uma task geral de inicialização da aplicação.
     private enum InitializationTaskKey: StorageKey, LockKey {
-        typealias Value = Task<Void, Error>
+        typealias Value = [Awaitable]
     }
 
     /// Espera a inicialização ser concluída.
     func initialization() async throws {
-        let task = self.locks.lock(for: InitializationTaskKey.self).withLock {
-            self.storage[InitializationTaskKey.self]
+        let tasks = self.locks.lock(for: InitializationTaskKey.self).withLock {
+            self.storage[InitializationTaskKey.self] ?? []
         }
 
-        try await task?.value
+        for task in tasks {
+            try await task.resolve()
+        }
     }
 
     /// Espera de forma síncrona a inicialização ser concluída.
@@ -60,13 +73,32 @@ extension Application {
     /// Insere nova task de inicialização.
     func addInitializationTask<Success, Failure: Error>(_ task: Task<Success, Failure>) {
         self.locks.lock(for: InitializationTaskKey.self).withLockVoid {
-            let oldTask = self.storage[InitializationTaskKey.self]
+            let currentTasks = self.storage[InitializationTaskKey.self] ?? []
 
-            self.storage[InitializationTaskKey.self] = Task {
-                try await oldTask?.value
-                _ = try await task.value
-            }
+            self.storage[InitializationTaskKey.self] = currentTasks + [task]
         }
+    }
+
+    /// Cria nova task e marca como de inicialização.
+    @discardableResult
+    func initializationTask<Success>(
+        operation: @escaping @Sendable () async -> Success
+    ) -> Task<Success, Never> {
+
+        let task = Task(operation: operation)
+        self.addInitializationTask(task)
+        return task
+    }
+
+    /// Cria nova task e marca como de inicialização.
+    @discardableResult
+    func initializationTask<Success>(
+        operation: @escaping @Sendable () async throws -> Success
+    ) -> Task<Success, Error> {
+
+        let task = Task(operation: operation)
+        self.addInitializationTask(task)
+        return task
     }
 }
 
@@ -84,7 +116,7 @@ extension Application {
     @discardableResult
     func initialize<Controller: ContentController>(controller type: Controller.Type) -> Task<Controller?, Never> {
 
-        let task = Task { () -> Controller? in
+        let task = self.initializationTask { () -> Controller? in
             do {
                 return try await Controller(app: self)
             } catch {
@@ -97,7 +129,6 @@ extension Application {
                 return nil
             }
         }
-        self.addInitializationTask(task)
 
         self.storage[ControllerKey<Controller>.self] = task
         return task

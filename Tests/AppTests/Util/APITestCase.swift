@@ -35,10 +35,7 @@ class APITestCase: XCTestCase {
     }
 
     /// Checa se o acesso no endpoint do servidor retorna o resultado esperado em JSON.
-    func assertJsonResult(
-        on endpoint: String,
-        matches expectedValue: JSONValue
-    ) throws {
+    func assertJsonResult(on endpoint: String, matches expectedValue: JSONValue) throws {
         try app.test(.GET, endpoint, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
             XCTAssertEqual(res.content.contentType, .json)
@@ -47,10 +44,7 @@ class APITestCase: XCTestCase {
     }
 
     /// Checa se o acesso no endpoint do servidor retorna um resultado com tamanho esperado em JSON.
-    func assertJsonSize(
-        on endpoint: String,
-        size: Int
-    ) throws {
+    func assertJsonSize(on endpoint: String, size: Int) throws {
         try app.test(.GET, endpoint, afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
             XCTAssertEqual(res.content.contentType, .json)
@@ -59,26 +53,19 @@ class APITestCase: XCTestCase {
     }
 
     /// Assegura que o endpoint não existe no servidor.
-    func assertNotFound(
-        on endpoint: String
-    ) throws {
+    func assertNotFound(on endpoint: String) throws {
         try assertStatus(on: endpoint, for: .notFound)
     }
 
     /// Assegura que o servidor não aceitou a requisição por ser feita de forma errada.
-    func assertBadRequest(
-        on endpoint: String
-    ) throws {
+    func assertBadRequest(on endpoint: String) throws {
         try assertStatus(on: endpoint, for: .badRequest)
     }
 
     // MARK: - Métodos auxiliares
 
     /// Assegura que a requisição retorna com um status igual a `status`.
-    private func assertStatus(
-        on endpoint: String,
-        for status: HTTPStatus
-    ) throws {
+    private func assertStatus(on endpoint: String, for status: HTTPStatus) throws {
         try app.test(.GET, endpoint, afterResponse: { res in
             XCTAssertEqual(res.status, status)
         })

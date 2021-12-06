@@ -28,8 +28,8 @@ final class DisciplineAPITests: APITestCase {
             "reqBy": [
                 "CV074", "CV632", "EA044", "EA060", "EA869", "EA954",
                 "EG940", "EM008", "EM024", "EQ048", "F 790", "FA103",
-                "FA374", "MC202", "MC886", "MC886", "MC949", "MC949",
-                "ME315", "MS211", "MS505", "MS614"
+                "FA374", "MC202", "MC886", "MC949", "ME315", "MS211",
+                "MS505", "MS614"
             ]
         ])
 
