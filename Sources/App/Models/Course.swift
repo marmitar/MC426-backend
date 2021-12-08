@@ -90,7 +90,7 @@ struct Course: Content, Hashable, Sendable {
 }
 
 extension Course: Searchable {
-    static let scaling = 0.5
+    static let scaling = 0.8
     static let identifiers: Set<Properties> = [.code]
 
     /// Propriedades buscáveis no curso.
@@ -112,11 +112,10 @@ extension Course: Searchable {
         @inlinable
         var weight: Double {
             switch self {
-                // maior peso para o código, que é mais exato
                 case .code:
-                    return 0.3
+                    return 0.2
                 case .name:
-                    return 0.7
+                    return 0.8
             }
         }
     }

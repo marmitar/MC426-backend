@@ -48,10 +48,6 @@ struct BuildCache: Command {
     let help = "Run web scraping script, save cache and exit."
 
     func run(using context: CommandContext, signature: Signature) throws {
-        let task = context.application.eventLoopGroup.performWithTask {
-            _ = try? await context.application.instance(controller: Discipline.Controller.self)
-            _ = try? await context.application.instance(controller: Course.Controller.self)
-        }
-        try task.wait()
+        try context.application.waitInitialization()
     }
 }
