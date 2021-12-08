@@ -87,6 +87,10 @@ struct SearchController {
         }
     }
 
+    func searchFor(query: String, limit: UInt? = nil) async -> [SearchResult] {
+        await self.searchFor(params: SearchParams(query: query, limit: limit))
+    }
+
     /// Junta vários resultados de busca em um só array.
     private func mergeAndSortSearchResults(
         _ resultGroup: TaskGroup<[SearchResult]>,

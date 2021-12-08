@@ -34,8 +34,7 @@ public func configure(_ app: Application) throws {
 
 /// Formata output de JSON com chaves ordenadas e identadas.
 private func enablePrettyPrintForJSON() {
-    let globalEncoder = try? ContentConfiguration.global.requireEncoder(for: .json)
-    let encoder = globalEncoder as? JSONEncoder ?? JSONEncoder()
+    let encoder = ContentConfiguration.global.jsonEncoder ?? JSONEncoder()
 
     encoder.outputFormatting.formUnion([.sortedKeys, .prettyPrinted])
     ContentConfiguration.global.use(encoder: encoder, for: .json)

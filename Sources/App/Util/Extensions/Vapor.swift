@@ -1,4 +1,23 @@
+import Foundation
 import Vapor
+
+extension WebSocket {
+    func onText(_ callback: @escaping (WebSocket, String) async -> Void) {
+        self.onText { webSocket, text in
+            _ = webSocket.eventLoop.performWithTask {
+                await callback(webSocket, text)
+            }
+        }
+    }
+}
+
+extension ContentConfiguration {
+    /// Returns the current global encoder for `json` content.
+    @inlinable
+    var jsonEncoder: JSONEncoder? {
+        try? self.requireEncoder(for: .json) as? JSONEncoder
+    }
+}
 
 extension Logger {
     /// Baseado no `Logger.report` do Vapor.

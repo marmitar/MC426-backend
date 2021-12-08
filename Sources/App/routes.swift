@@ -34,6 +34,22 @@ private func api_routes(_ api: RoutesBuilder) {
         )
     }
 
+    // WebSocket: busca textual entre vários elementos.
+    api.webSocket("busca", "ws") { req, wsock in
+        let encoder = ContentConfiguration.global.jsonEncoder ?? JSONEncoder()
+
+        // para cada query, envia os resultados da busca em json
+        wsock.onText { wsock, text in
+            let results = await req.searchController.searchFor(query: text)
+
+            if let data = try? encoder.encode(results) {
+                wsock.send(raw: data, opcode: .text)
+            } else {
+                wsock.send("[]")
+            }
+        }
+    }
+
     // API: dados para a página de uma disciplina
     api.get("disciplina", ":code") { req in
         try await req.disciplines.fetchDiscipline(
