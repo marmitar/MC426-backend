@@ -91,7 +91,7 @@ build-release:
   script:
     - swift build -c release
     - cp "$(swift build -c release --show-bin-path)/Run" Run
-    - swift run -c relese Run build-cache
+    - swift run -c release Run build-cache
   artifacts:
     name: "binary-and-cache"
     paths:
@@ -107,9 +107,7 @@ swift-lint:
   variables:
   script:
     - swiftlint
-  needs:
-    - job: build-release
-      artifacts: false
+  needs: *use-builder-image
 
 # Main test job
 test-release-version:
