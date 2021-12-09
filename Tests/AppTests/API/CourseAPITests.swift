@@ -21,9 +21,9 @@ final class CourseAPITests: APITestCase {
             "name": "Engenharia de Computação",
             "code": "34",
             "variants": [
-                "AA - Sistemas de Computação",
-                "AB - Sistemas e Processos Industriais",
-                "AX - Para Matrícula Antes da Opção"
+                ["code": "AA", "name": "Sistemas de Computação"],
+                ["code": "AB", "name": "Sistemas e Processos Industriais"],
+                ["code": "AX", "name": "Para Matrícula Antes da Opção"]
             ]
         ])
     }
