@@ -39,17 +39,17 @@ extension Course {
                 throw Abort(.notFound)
             }
 
-            return Preview(code: course.code, name: course.name, variants: course.variantNames)
+            let variants = course.variants.map { variant in
+                Course.Variant.Preview(code: variant.code, name: variant.name)
+            }
+            return Preview(code: course.code, name: course.name, variants: variants)
         }
 
         /// Recupera árvore por código e índice.
         func fetchCourseTree(code: String, variant: String) throws -> Course.Tree {
-            guard let index = Int(variant) else {
-                throw Abort(.badRequest)
-            }
             guard
                 let course = self.courses[code],
-                let tree = course.trees.get(at: index)
+                let tree = course.trees[variant]
             else {
                 throw Abort(.notFound)
             }
@@ -62,6 +62,13 @@ extension Course {
     struct Preview: Content {
         let code: String
         let name: String
-        let variants: [String]
+        let variants: [Course.Variant.Preview]
+    }
+}
+
+extension Course.Variant {
+    struct Preview: Content {
+        let code: String
+        let name: String
     }
 }

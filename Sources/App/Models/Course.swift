@@ -68,10 +68,10 @@ struct Course: Content, Hashable, Sendable {
 
     /// Nome das modalidades no currículo.
     @inlinable
-    var variantNames: [String] {
+    var variants: [Variant] {
         switch self.curriculum {
             case .variants(let variants):
-                return variants.map { "\($0.code) - \($0.name)" }
+                return variants
             case .tree:
                 return []
         }
@@ -79,12 +79,18 @@ struct Course: Content, Hashable, Sendable {
 
     /// Árvores para cada modalidade no currículo.
     @inlinable
-    var trees: [Tree] {
+    var trees: [String: Tree] {
         switch self.curriculum {
             case .variants(let variants):
-                return variants.map { $0.tree }
+                let pairs = variants.enumerated().flatMap { index, variant in
+                    [
+                        (variant.code, variant.tree),
+                        ("\(index)", variant.tree)
+                    ]
+                }
+                return Dictionary(uniqueKeysWithValues: pairs)
             case .tree(let tree):
-                return [tree]
+                return ["arvore": tree, "0": tree]
         }
     }
 }
