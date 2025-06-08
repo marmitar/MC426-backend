@@ -1,4 +1,3 @@
 [submodule "Sources/RapidFuzz/rapidfuzz-cpp"]
 	path = Sources/RapidFuzz/rapidfuzz-cpp
-	url = ../rapidfuzz-cpp.git
-	branch = noexception
+	url = https://github.com/marmitar/MC426-rapidfuzz-cpp.git

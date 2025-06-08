@@ -1,4 +1,4 @@
-# Back-End do Planejador de Disciplinas
+# Back-End do Planejador de Disciplinas (Projeto de MC426)
 
 Estrutura de backend usando Vapor, com testes unitários já integrados.
 
